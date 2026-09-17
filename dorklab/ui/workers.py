@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ..qtcompat import QtCore, Signal
 from .. import providers
+from .. import discovery
 from ..fetcher import Downloader
 from ..metadata import extract as extract_metadata
 
@@ -148,3 +149,46 @@ class ExtractWorker(QtCore.QThread):
             self.failed.emit(str(exc))
         except Exception as exc:  # noqa: BLE001
             self.failed.emit("Errore imprevisto: %s" % exc)
+
+
+class DiscoveryWorker(QtCore.QThread):
+    """Esegue le fonti di scoperta selezionate su un dominio."""
+
+    progress = Signal(str)
+    one_done = Signal(str, object)        # source_id, DiscoveryResponse
+    one_failed = Signal(str, str)         # source_id, errore
+    finished_all = Signal()
+
+    def __init__(self, source_ids, target, config, limit=1000,
+                 filetypes=None, authorized=False, parent=None) -> None:
+        super().__init__(parent)
+        self.source_ids = source_ids
+        self.target = target
+        self.config = config
+        self.limit = limit
+        self.filetypes = filetypes or []
+        self.authorized = authorized
+        self._stop = False
+
+    def stop(self) -> None:
+        self._stop = True
+
+    def run(self) -> None:  # pragma: no cover - thread
+        for source_id in self.source_ids:
+            if self._stop:
+                break
+            source = discovery.get(source_id)
+            if source is None:
+                continue
+            self.progress.emit("%s\u2026" % source.label)
+            try:
+                response = source.discover(
+                    self.target, config=self.config, limit=self.limit,
+                    filetypes=self.filetypes or None,
+                    progress=self.progress.emit, authorized=self.authorized)
+                self.one_done.emit(source_id, response)
+            except discovery.DiscoveryError as exc:
+                self.one_failed.emit(source_id, str(exc))
+            except Exception as exc:  # noqa: BLE001
+                self.one_failed.emit(source_id, "Errore imprevisto: %s" % exc)
+        self.finished_all.emit()

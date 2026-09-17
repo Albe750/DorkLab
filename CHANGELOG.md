@@ -2,6 +2,30 @@
 
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/).
 
+## [1.1.0] - 2026-09-17
+
+### Aggiunto
+
+- Scheda **Scoperta**: contenuto pubblico non indicizzato dai motori, da sei
+  fonti — Wayback Machine (con copia archiviata recuperabile anche di pagine non
+  piu' online), Common Crawl, Certificate Transparency (crt.sh), sitemap e
+  robots.txt, crawler di directory aperte e sondaggio di percorsi a dizionario.
+- Opzione "Scarica dalla copia archiviata": recupera il documento dallo snapshot
+  quando il vivo non risponde piu'.
+- Gli URL scoperti confluiscono nella scheda Risultati per download ed
+  estrazione dei metadati.
+- Il sondaggio attivo dei percorsi e' vincolato alla conferma di autorizzazione,
+  come l'audit difensivo.
+
+### Corretto
+
+- "Cerca" apriva il browser invece di riportare i risultati nell'app quando era
+  selezionato un motore browser: ora "Cerca" e' riservato ai motori API e
+  agentici, mentre i motori browser usano "Apri nel browser" (con conferma).
+- Tavily restituiva zero risultati perche' riceveva come query l'intero blocco
+  di istruzioni in linguaggio naturale: ora gli viene passata una query di
+  ricerca concisa e i vincoli di dominio vanno nel filtro `include_domains`.
+
 ## [1.0.0] - 2026-09-17
 
 ### Aggiunto

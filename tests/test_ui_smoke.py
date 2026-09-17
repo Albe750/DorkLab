@@ -34,7 +34,19 @@ def window(app, tmp_path, monkeypatch):
 
 
 def test_finestra_si_costruisce(window):
-    assert window.tabs.count() == 5
+    assert window.tabs.count() == 6
+    titoli = [window.tabs.tabText(i) for i in range(window.tabs.count())]
+    assert "Scoperta" in titoli
+
+
+def test_motore_browser_non_abilita_cerca(window):
+    """Regressione: 'Cerca' apriva il browser invece di riportare nell'app."""
+    builder = window.builder
+    builder.set_query_text("site:x.it filetype:pdf test")
+    builder.provider_combo.setCurrentIndex(builder.provider_combo.findData("google_browser"))
+    assert not builder.search_button.isEnabled()   # browser -> Cerca disabilitato
+    builder.provider_combo.setCurrentIndex(builder.provider_combo.findData("tavily"))
+    assert builder.search_button.isEnabled()       # agentico -> Cerca abilitato
 
 
 def test_costruzione_query_da_bolle(window):

@@ -40,6 +40,28 @@ def _prompt_for(query: str, limit: int, translate: bool) -> str:
     )
 
 
+def _tavily_query(dork: str) -> str:
+    """Ricava da una query dork una query di ricerca concisa per Tavily.
+
+    Tavily si aspetta nel campo ``query`` una vera query di ricerca, non un
+    blocco di istruzioni ne' gli operatori dork: quelli (``site:``) vengono
+    passati separatamente come ``include_domains``. Passare l'intero dork o il
+    prompt in linguaggio naturale come query produce zero risultati.
+    """
+    found = constraints_mod.extract(dork)
+    parts: list[str] = list(found.terms)
+    if found.filetypes:
+        # aiuta Tavily a preferire i documenti, senza sintassi dork
+        parts.append(" OR ".join(found.filetypes))
+    parts.extend(found.intitle)
+    parts.extend(found.inurl)
+    query = " ".join(p for p in parts if p).strip()
+    if not query:
+        # nessun termine libero: usa il dominio come argomento, o un generico
+        query = " ".join(found.sites) or "documenti pubblici"
+    return query
+
+
 def _allowed_domains(query: str) -> tuple[list[str], list[str]]:
     """Ricava domini ammessi ed esclusi dai vincoli site: della query.
 
@@ -332,10 +354,12 @@ class TavilyProvider(BaseProvider):
         # la query originale resta come prima variante: e' quella piu' fedele
         return [query, *[v for v in variants if v != query]][: self.MAX_VARIANTS + 1]
 
-    def _call(self, text: str, *, key: str, config, limit: int,
+    def _call(self, query: str, *, key: str, config, limit: int,
               allowed: list[str], blocked: list[str]) -> dict:
         body: dict = {
-            "query": text,
+            # compatibilita': alcune chiavi Tavily accettano l'auth nel corpo
+            "api_key": key,
+            "query": query,
             "max_results": max(1, min(limit, self.PER_CALL)),
             "search_depth": "advanced",   # massima profondita' disponibile
             "chunks_per_source": 3,       # ammesso solo con search_depth advanced
@@ -357,7 +381,6 @@ class TavilyProvider(BaseProvider):
             raise SearchError("Chiave API Tavily mancante.")
 
         allowed, blocked = _allowed_domains(query)
-        translate = bool(config.get("agentic_translate", True))
         deep = bool(config.get("tavily_deep", True))
 
         queries = self._variants(query, limit) if deep else [query]
@@ -369,12 +392,16 @@ class TavilyProvider(BaseProvider):
         for index, variant in enumerate(queries, start=1):
             if budget <= 0:
                 break
+            # ogni variante conserva il proprio site:, quindi i domini ammessi
+            # vanno ricalcolati per variante (una sola per volta in profondita')
+            variant_allowed, variant_blocked = _allowed_domains(variant)
+            search_query = _tavily_query(variant)
             self._note(progress, "Tavily (advanced) %d/%d: %s"
-                       % (index, len(queries), variant[:70]))
-            text = _prompt_for(variant, min(budget, self.PER_CALL), translate)
-            payload = self._call(text, key=key, config=config,
+                       % (index, len(queries), search_query[:60] or variant[:60]))
+            payload = self._call(search_query, key=key, config=config,
                                  limit=min(budget, self.PER_CALL),
-                                 allowed=allowed, blocked=blocked)
+                                 allowed=variant_allowed or allowed,
+                                 blocked=variant_blocked or blocked)
 
             answer = (payload.get("answer") or "").strip()
             if answer and answer not in answers:

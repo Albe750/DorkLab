@@ -415,9 +415,27 @@ class BuilderTab(QtWidgets.QWidget):
             return
         text = self.query.to_string()
         self.preview.setPlainText(text)
-        self.search_button.setEnabled(bool(text))
-        self.browser_button.setEnabled(bool(text))
+        self._update_action_buttons()
         self.query_changed.emit(text)
+
+    def _update_action_buttons(self) -> None:
+        """Abilita i pulsanti in base al motore e alla presenza di testo.
+
+        "Cerca" (risultati nell'app) ha senso solo per i motori API e agentici;
+        per i motori browser resta disabilitato e si usa "Apri nel browser".
+        """
+        text = self.query_text()
+        provider = self.current_provider()
+        is_browser = provider is not None and provider.kind == "browser"
+        self.search_button.setEnabled(bool(text) and not is_browser)
+        self.browser_button.setEnabled(bool(text))
+        if is_browser:
+            self.search_button.setToolTip(
+                "Questo motore apre il browser e non riporta i risultati nell'app. "
+                "Usa \"Apri nel browser\", oppure scegli un motore API o agentico "
+                "(es. Tavily) per avere i risultati nella scheda Risultati.")
+        else:
+            self.search_button.setToolTip("")
 
     def _toggle_raw(self, enabled: bool) -> None:
         self._raw_mode = enabled
@@ -486,9 +504,7 @@ class BuilderTab(QtWidgets.QWidget):
                 hint += "\nManca: %s (Impostazioni → Motori)." % missing
         self.provider_hint.setText(hint)
 
-        self.search_button.setEnabled(provider.kind != "browser" and bool(self.query_text()))
-        self.search_button.setToolTip(
-            "Questo motore si apre nel browser" if provider.kind == "browser" else "")
+        self._update_action_buttons()
 
     # --------------------------------------------------------------- segnali
     def trigger_search(self) -> None:

@@ -39,6 +39,29 @@ I risultati si scaricano con controlli di sicurezza (rispetto di `robots.txt`,
 ritardo fra richieste, tetto di dimensione) e ne vengono estratti i **metadati**
 — autore, software, organizzazione, date — aggregati per individuare ricorrenze.
 
+**Scoperta di contenuto non indicizzato.** E' il vero senso di queste ricerche:
+i motori indicizzano solo una frazione del web pubblico. La scheda **Scoperta**
+pesca il resto, dal dominio che indichi, attraverso sei fonti:
+
+- **Wayback Machine** — tutti gli URL mai archiviati, con la data dello snapshot
+  e la copia recuperabile *anche se la pagina non e' piu' online*;
+- **Common Crawl** — il piu' grande corpus web pubblico, spesso con URL assenti
+  dagli indici commerciali;
+- **Certificate Transparency (crt.sh)** — sottodomini ricavati dai log dei
+  certificati TLS: staging, portali interni, servizi dimenticati;
+- **Sitemap e robots.txt** — le mappe che il sito pubblica per i crawler; i
+  percorsi in `Disallow` sono spesso i piu' interessanti;
+- **Directory aperte** — un crawler che cammina negli indici lasciati navigabili
+  dal server, raccogliendo file non collegati da alcuna pagina;
+- **Sondaggio percorsi** — prova un elenco curato di percorsi (backup,
+  configurazioni, cartelle di documenti) contro il server: e' ricognizione
+  attiva e richiede la conferma di autorizzazione, come l'audit.
+
+Gli URL scoperti passano dalla stessa pipeline dei risultati di ricerca:
+download, estrazione dei metadati, export. E c'e' l'opzione **"Scarica dalla
+copia archiviata"**, che recupera il documento dallo snapshot dell'archivio
+quando il vivo non risponde piu'.
+
 **Protective dorking.** Quattordici famiglie di controlli difensivi, ciascuna
 con spiegazione del rischio e passi di rimedio concreti, applicate **sempre e
 solo** al dominio che dichiari di essere autorizzato a verificare. Il risultato
@@ -151,7 +174,7 @@ della ricerca sintetica senza perdere il controllo del perimetro.
 
 ---
 
-## Le quattro schede
+## Le schede
 
 ### Costruttore
 
@@ -168,6 +191,16 @@ bilanci, directory aperte, brevetti, mappatura dei sottodomini.
 Tabella ordinabile con tipo, dominio ed esito della verifica dei vincoli.
 Da qui si aprono, si copiano, si **scaricano** i documenti e se ne estraggono i
 **metadati aggregati**. Esportazione in CSV, JSON, Markdown e HTML.
+
+### Scoperta
+
+![Scoperta](docs/img/scoperta.png)
+
+Le sei fonti di contenuto non indicizzato descritte sopra. Fonti raggruppate
+per classe (archivio di terze parti, mappe del sito, sondaggio attivo), filtro
+opzionale per tipo di documento, e il recupero dalla copia archiviata. Il
+sondaggio dei percorsi resta disabilitato finche' non dichiari l'autorizzazione
+sul dominio.
 
 ### GHDB
 

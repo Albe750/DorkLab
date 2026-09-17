@@ -11,6 +11,7 @@ from . import style
 from .dialog_settings import SettingsDialog
 from .tab_audit import AuditTab
 from .tab_builder import BuilderTab
+from .tab_discovery import DiscoveryTab
 from .tab_ghdb import GhdbTab
 from .tab_history import HistoryTab
 from .tab_results import ResultsTab
@@ -66,12 +67,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.builder = BuilderTab(self.config, self)
         self.results = ResultsTab(self.config, self)
+        self.discovery = DiscoveryTab(self.config, self)
         self.ghdb = GhdbTab(self.config, self)
         self.audit = AuditTab(self.config, self)
         self.history = HistoryTab(self.store, self)
 
         self.tabs.addTab(self.builder, "Costruttore")
         self.tabs.addTab(self.results, "Risultati")
+        self.tabs.addTab(self.discovery, "Scoperta")
         self.tabs.addTab(self.ghdb, "GHDB")
         self.tabs.addTab(self.audit, "Audit difensivo")
         self.tabs.addTab(self.history, "Cronologia")
@@ -81,6 +84,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.builder.open_requested.connect(self.open_in_browser)
         self.builder.save_requested.connect(self.save_dork)
         self.results.status.connect(self.set_status)
+        self.discovery.status.connect(self.set_status)
+        self.discovery.send_to_results.connect(self._discovery_to_results)
         self.ghdb.load_in_builder.connect(self.load_query)
         self.ghdb.use_for_audit.connect(self._ghdb_to_audit)
         self.ghdb.status.connect(self.set_status)
@@ -136,7 +141,14 @@ class MainWindow(QtWidgets.QMainWindow):
         if provider is None:
             return
         if provider.kind == "browser":
-            self.open_in_browser(provider_id, query)
+            # I motori browser non riportano i risultati nell'app: lo si dice in
+            # modo esplicito invece di aprire il browser di sorpresa.
+            if confirm(self, "Motore che apre il browser",
+                       "\u00ab%s\u00bb apre i risultati nel browser e non li "
+                       "riporta nella scheda Risultati.\n\nPer avere i risultati "
+                       "dentro l'app scegli un motore API o agentico, per esempio "
+                       "Tavily.\n\nApro comunque nel browser?" % provider.label):
+                self.open_in_browser(provider_id, query)
             return
         if not provider.available(self.config):
             missing = ", ".join(c.label for c in provider.missing_credentials(self.config))
@@ -211,6 +223,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def _ghdb_to_audit(self, dork: str) -> None:
         self.tabs.setCurrentWidget(self.audit)
         self.audit.add_custom_query(dork)
+
+    def _discovery_to_results(self, results) -> None:
+        self.results.append_results(results)
+        self.tabs.setCurrentWidget(self.results)
+        self.set_status("%d URL scoperti aggiunti ai Risultati" % len(results))
 
     def _audit_results(self, response) -> None:
         self.results.append_results(response.results)
