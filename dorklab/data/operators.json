@@ -1,0 +1,196 @@
+{
+  "version": 2,
+  "categories": [
+    {"id": "scope",   "label": "Ambito",        "color": "#3d7bff", "desc": "Dove cercare: domini, URL, host."},
+    {"id": "content", "label": "Contenuto",     "color": "#16a085", "desc": "Cosa deve contenere la pagina."},
+    {"id": "files",   "label": "File",          "color": "#e67e22", "desc": "Tipo ed estensione dei documenti."},
+    {"id": "time",    "label": "Tempo",         "color": "#8e44ad", "desc": "Finestra temporale dei risultati."},
+    {"id": "logic",   "label": "Logica",        "color": "#7f8c8d", "desc": "Operatori booleani e raggruppamenti."},
+    {"id": "special", "label": "Speciali",      "color": "#c0392b", "desc": "Operatori specifici di un singolo motore."}
+  ],
+  "operators": [
+    {"id": "site", "token": "site", "label": "site:", "category": "scope", "value_required": true,
+     "hint": "esempio.it", "example": "site:unibo.it",
+     "desc": "Limita i risultati a un dominio, sottodominio o TLD. Base di ogni ricerca mirata e di ogni audit difensivo.",
+     "engines": ["google", "bing", "duckduckgo", "brave", "startpage", "yandex", "mojeek"]},
+
+    {"id": "inurl", "token": "inurl", "label": "inurl:", "category": "scope", "value_required": true,
+     "hint": "admin", "example": "inurl:wp-content",
+     "desc": "La parola compare nell'URL. Utile per individuare percorsi, pannelli, sezioni di un sito.",
+     "engines": ["google", "duckduckgo", "brave", "startpage"]},
+
+    {"id": "allinurl", "token": "allinurl", "label": "allinurl:", "category": "scope", "value_required": true,
+     "hint": "admin login", "example": "allinurl:admin login",
+     "desc": "Tutte le parole indicate devono comparire nell'URL.",
+     "engines": ["google"]},
+
+    {"id": "intitle", "token": "intitle", "label": "intitle:", "category": "content", "value_required": true,
+     "hint": "relazione annuale", "example": "intitle:\"index of\"",
+     "desc": "La parola o frase compare nel titolo della pagina.",
+     "engines": ["google", "bing", "duckduckgo", "brave", "startpage", "yandex"]},
+
+    {"id": "allintitle", "token": "allintitle", "label": "allintitle:", "category": "content", "value_required": true,
+     "hint": "bilancio 2025", "example": "allintitle:bilancio consolidato",
+     "desc": "Tutte le parole devono comparire nel titolo.",
+     "engines": ["google"]},
+
+    {"id": "intext", "token": "intext", "label": "intext:", "category": "content", "value_required": true,
+     "hint": "codice fiscale", "example": "intext:\"confidential\"",
+     "desc": "La parola compare nel corpo del testo della pagina.",
+     "engines": ["google", "duckduckgo", "brave", "startpage"]},
+
+    {"id": "allintext", "token": "allintext", "label": "allintext:", "category": "content", "value_required": true,
+     "hint": "username password", "example": "allintext:username password",
+     "desc": "Tutte le parole devono comparire nel corpo del testo.",
+     "engines": ["google"]},
+
+    {"id": "inanchor", "token": "inanchor", "label": "inanchor:", "category": "content", "value_required": true,
+     "hint": "scarica pdf", "example": "inanchor:\"download\"",
+     "desc": "La parola compare nel testo dei link che puntano alla pagina.",
+     "engines": ["google", "bing"]},
+
+    {"id": "allinanchor", "token": "allinanchor", "label": "allinanchor:", "category": "content", "value_required": true,
+     "hint": "manuale utente", "example": "allinanchor:manuale utente",
+     "desc": "Tutte le parole devono comparire nell'anchor text dei link entranti.",
+     "engines": ["google"]},
+
+    {"id": "filetype", "token": "filetype", "label": "filetype:", "category": "files", "value_required": true,
+     "hint": "pdf", "example": "filetype:pdf",
+     "desc": "Restringe a uno specifico formato di file indicizzato. L'operatore chiave per l'estrazione documentale.",
+     "engines": ["google", "bing", "duckduckgo", "brave", "startpage", "yandex"]},
+
+    {"id": "ext", "token": "ext", "label": "ext:", "category": "files", "value_required": true,
+     "hint": "bak", "example": "ext:sql",
+     "desc": "Alias di filetype: su Google. Spesso funziona anche con estensioni non ufficialmente supportate.",
+     "engines": ["google", "startpage"]},
+
+    {"id": "related", "token": "related", "label": "related:", "category": "scope", "value_required": true,
+     "hint": "esempio.it", "example": "related:iso.org",
+     "desc": "Trova siti simili a quello indicato. Utile per allargare una ricerca documentale a fonti affini.",
+     "engines": ["google"]},
+
+    {"id": "cache", "token": "cache", "label": "cache:", "category": "special", "value_required": true,
+     "hint": "esempio.it/pagina", "example": "cache:esempio.it",
+     "desc": "Versione in cache della pagina. Google ha dismesso questo operatore nel 2024: usa Wayback Machine come alternativa.",
+     "deprecated": true, "engines": ["google"]},
+
+    {"id": "link", "token": "link", "label": "link:", "category": "special", "value_required": true,
+     "hint": "esempio.it", "example": "link:esempio.it",
+     "desc": "Pagine che linkano l'URL indicato. Dismesso da Google, ancora parzialmente utile su altri motori.",
+     "deprecated": true, "engines": ["google"]},
+
+    {"id": "info", "token": "info", "label": "info:", "category": "special", "value_required": true,
+     "hint": "esempio.it", "example": "info:esempio.it",
+     "desc": "Informazioni che il motore possiede su un URL. Operatore dismesso.",
+     "deprecated": true, "engines": ["google"]},
+
+    {"id": "define", "token": "define", "label": "define:", "category": "content", "value_required": true,
+     "hint": "metrologia", "example": "define:taratura",
+     "desc": "Definizione di un termine.",
+     "engines": ["google"]},
+
+    {"id": "before", "token": "before", "label": "before:", "category": "time", "value_required": true,
+     "hint": "2024-01-01", "example": "before:2023-12-31",
+     "desc": "Risultati antecedenti alla data indicata (AAAA-MM-GG).",
+     "engines": ["google"]},
+
+    {"id": "after", "token": "after", "label": "after:", "category": "time", "value_required": true,
+     "hint": "2020-01-01", "example": "after:2024-01-01",
+     "desc": "Risultati successivi alla data indicata (AAAA-MM-GG).",
+     "engines": ["google"]},
+
+    {"id": "daterange", "token": "daterange", "label": "daterange:", "category": "time", "value_required": true,
+     "hint": "2458849-2459215", "example": "daterange:2458849-2459215",
+     "desc": "Intervallo in date giuliane. Legacy: before:/after: sono piu' leggibili.",
+     "engines": ["google"]},
+
+    {"id": "numrange", "token": "", "label": "N..M", "category": "time", "value_required": true, "raw": true,
+     "hint": "2019..2025", "example": "bilancio 2019..2025",
+     "desc": "Intervallo numerico (anni, prezzi, versioni).",
+     "engines": ["google"]},
+
+    {"id": "around", "token": "", "label": "AROUND(n)", "category": "logic", "value_required": true, "raw": true,
+     "hint": "3", "template": "AROUND({value})",
+     "example": "taratura AROUND(3) certificato",
+     "desc": "I due termini devono trovarsi entro n parole di distanza.",
+     "engines": ["google"]},
+
+    {"id": "exact", "token": "", "label": "\"frase esatta\"", "category": "logic", "value_required": true, "raw": true,
+     "hint": "frase da cercare", "template": "\"{value}\"",
+     "example": "\"rapporto di prova\"",
+     "desc": "Corrispondenza letterale della frase.",
+     "engines": ["google", "bing", "duckduckgo", "brave", "startpage", "yandex", "mojeek"]},
+
+    {"id": "wildcard", "token": "", "label": "* (jolly)", "category": "logic", "value_required": true, "raw": true,
+     "hint": "certificato * taratura", "template": "{value}",
+     "example": "certificato * taratura",
+     "desc": "L'asterisco sostituisce una parola qualsiasi all'interno di una frase.",
+     "engines": ["google", "bing", "startpage"]},
+
+    {"id": "or", "token": "", "label": "OR", "category": "logic", "value_required": false, "raw": true,
+     "template": "OR", "example": "pdf OR docx",
+     "desc": "Uno qualsiasi dei termini. Su Google si puo' usare anche il carattere |.",
+     "engines": ["google", "bing", "duckduckgo", "brave", "startpage", "yandex", "mojeek"]},
+
+    {"id": "and", "token": "", "label": "AND", "category": "logic", "value_required": false, "raw": true,
+     "template": "AND", "example": "iso AND 17025",
+     "desc": "Entrambi i termini. E' il comportamento predefinito, esplicitarlo migliora la leggibilita'.",
+     "engines": ["google", "bing", "duckduckgo", "brave", "startpage", "yandex"]},
+
+    {"id": "group", "token": "", "label": "( raggruppa )", "category": "logic", "value_required": true, "raw": true,
+     "hint": "a OR b", "template": "({value})",
+     "example": "(pdf OR docx) manuale",
+     "desc": "Raggruppa un blocco di condizioni per controllarne la precedenza.",
+     "engines": ["google", "bing", "duckduckgo", "brave", "startpage", "yandex"]},
+
+    {"id": "contains", "token": "contains", "label": "contains:", "category": "special", "value_required": true,
+     "hint": "pdf", "example": "contains:pdf",
+     "desc": "Bing: pagine che contengono un link a un file del tipo indicato.",
+     "engines": ["bing"]},
+
+    {"id": "ip", "token": "ip", "label": "ip:", "category": "special", "value_required": true,
+     "hint": "203.0.113.10", "example": "ip:203.0.113.10",
+     "desc": "Bing: siti ospitati sull'indirizzo IP indicato. Utile per mappare l'hosting condiviso dei propri asset.",
+     "engines": ["bing"]},
+
+    {"id": "feed", "token": "feed", "label": "feed:", "category": "special", "value_required": true,
+     "hint": "rss", "example": "feed:rss",
+     "desc": "Bing: pagine che espongono un feed del tipo indicato.",
+     "engines": ["bing"]},
+
+    {"id": "inbody", "token": "inbody", "label": "inbody:", "category": "special", "value_required": true,
+     "hint": "riservato", "example": "inbody:riservato",
+     "desc": "Bing: equivalente di intext:.",
+     "engines": ["bing"]},
+
+    {"id": "domain_bing", "token": "domain", "label": "domain:", "category": "special", "value_required": true,
+     "hint": "esempio.it", "example": "domain:esempio.it",
+     "desc": "Bing: equivalente di site: limitato al dominio.",
+     "engines": ["bing"]},
+
+    {"id": "language_bing", "token": "language", "label": "language:", "category": "special", "value_required": true,
+     "hint": "it", "example": "language:it",
+     "desc": "Bing: lingua dei risultati (codice ISO a due lettere).",
+     "engines": ["bing"]},
+
+    {"id": "mime", "token": "mime", "label": "mime:", "category": "special", "value_required": true,
+     "hint": "pdf", "example": "mime:pdf",
+     "desc": "Yandex: equivalente di filetype:.",
+     "engines": ["yandex"]},
+
+    {"id": "host", "token": "host", "label": "host:", "category": "special", "value_required": true,
+     "hint": "www.esempio.it", "example": "host:www.esempio.it",
+     "desc": "Yandex: host esatto, sottodomini esclusi.",
+     "engines": ["yandex"]},
+
+    {"id": "rhost", "token": "rhost", "label": "rhost:", "category": "special", "value_required": true,
+     "hint": "it.esempio.*", "example": "rhost:it.esempio.*",
+     "desc": "Yandex: host in notazione inversa, accetta il carattere jolly.",
+     "engines": ["yandex"]},
+
+    {"id": "lang_yandex", "token": "lang", "label": "lang:", "category": "special", "value_required": true,
+     "hint": "it", "example": "lang:it",
+     "desc": "Yandex: lingua del documento.",
+     "engines": ["yandex"]}
+  ]
+}

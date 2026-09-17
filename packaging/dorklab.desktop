@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=DorkLab
+GenericName=Ricerca avanzata e protective dorking
+Comment=Costruisci ricerche avanzate, estrai documentazione e verifica l'esposizione del tuo dominio
+Exec=@EXEC@
+Icon=dorklab
+Terminal=false
+Categories=Network;Security;Utility;
+Keywords=osint;dork;ricerca;sicurezza;ghdb;documenti;
+StartupNotify=true
+StartupWMClass=dorklab

@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "placeholders": {
+    "topic": {"label": "Argomento", "hint": "parole chiave della ricerca"},
+    "domain": {"label": "Dominio", "hint": "esempio.it"},
+    "org": {"label": "Organizzazione", "hint": "nome ente o azienda"},
+    "year": {"label": "Anno", "hint": "2025"}
+  },
+  "recipes": [
+    {"id": "doc_dominio", "label": "Documenti su un dominio", "category": "estrazione",
+     "desc": "Tutti i documenti indicizzati di un sito, ordinabili per formato.",
+     "template": "site:{domain} (filetype:pdf OR filetype:doc OR filetype:docx OR filetype:odt) {topic}",
+     "fields": ["domain", "topic"], "tags": ["documenti", "dominio"]},
+
+    {"id": "report_whitepaper", "label": "Report, whitepaper e studi", "category": "estrazione",
+     "desc": "Documentazione tecnica approfondita su un argomento, indipendente dalla fonte.",
+     "template": "{topic} (filetype:pdf OR filetype:docx) (report OR whitepaper OR \"technical report\" OR studio OR relazione)",
+     "fields": ["topic"], "tags": ["ricerca"]},
+
+    {"id": "dataset", "label": "Dataset e dati aperti", "category": "estrazione",
+     "desc": "Fogli di calcolo e dataset pubblicati su un tema.",
+     "template": "{topic} (filetype:csv OR filetype:xlsx OR filetype:json) (dataset OR \"open data\" OR dati OR statistiche)",
+     "fields": ["topic"], "tags": ["dati"]},
+
+    {"id": "accademico", "label": "Pubblicazioni accademiche", "category": "estrazione",
+     "desc": "Paper, tesi e dispense da domini universitari.",
+     "template": "{topic} filetype:pdf (site:.edu OR site:.ac.uk OR site:.edu.au OR inurl:unipd OR inurl:unibo OR intext:university)",
+     "fields": ["topic"], "tags": ["accademico"]},
+
+    {"id": "tesi", "label": "Tesi e dissertazioni", "category": "estrazione",
+     "desc": "Lavori di tesi, spesso ricchi di bibliografia e dati primari.",
+     "template": "{topic} filetype:pdf (tesi OR thesis OR dissertation OR \"tesi di laurea\")",
+     "fields": ["topic"], "tags": ["accademico"]},
+
+    {"id": "norme", "label": "Norme, standard e specifiche", "category": "estrazione",
+     "desc": "Documenti normativi e specifiche tecniche pubblicamente disponibili.",
+     "template": "{topic} filetype:pdf (norma OR standard OR specifica OR \"UNI EN\" OR ISO OR IEC OR ASTM)",
+     "fields": ["topic"], "tags": ["normativa"]},
+
+    {"id": "manuali", "label": "Manuali e documentazione tecnica", "category": "estrazione",
+     "desc": "Manuali d'uso, di servizio e schede tecniche.",
+     "template": "{topic} (filetype:pdf OR filetype:djvu) (manuale OR manual OR handbook OR \"service manual\" OR \"user guide\" OR datasheet)",
+     "fields": ["topic"], "tags": ["tecnico"]},
+
+    {"id": "slide", "label": "Slide, corsi e dispense", "category": "estrazione",
+     "desc": "Materiale didattico e presentazioni di convegni.",
+     "template": "{topic} (filetype:ppt OR filetype:pptx OR filetype:pdf) (slide OR lecture OR dispense OR corso OR seminario)",
+     "fields": ["topic"], "tags": ["formazione"]},
+
+    {"id": "pa_italia", "label": "Documenti della PA italiana", "category": "estrazione",
+     "desc": "Delibere, bandi e atti pubblicati dalla Pubblica Amministrazione.",
+     "template": "(site:.gov.it OR site:.comune.it OR site:.regione.it) {topic} filetype:pdf",
+     "fields": ["topic"], "tags": ["pa", "italia"]},
+
+    {"id": "bandi", "label": "Bandi, gare e capitolati", "category": "estrazione",
+     "desc": "Documentazione di gara, capitolati tecnici e disciplinari.",
+     "template": "{topic} filetype:pdf (bando OR capitolato OR disciplinare OR \"gara d'appalto\" OR tender)",
+     "fields": ["topic"], "tags": ["appalti"]},
+
+    {"id": "bilanci", "label": "Bilanci e relazioni finanziarie", "category": "estrazione",
+     "desc": "Bilanci di esercizio, relazioni annuali e documenti di sostenibilita'.",
+     "template": "{org} filetype:pdf (bilancio OR \"annual report\" OR \"relazione finanziaria\" OR sostenibilita') {year}",
+     "fields": ["org", "year"], "tags": ["finanza"]},
+
+    {"id": "open_dir", "label": "Directory aperte di documenti", "category": "estrazione",
+     "desc": "Indici di directory navigabili: spesso contengono raccolte intere di file.",
+     "template": "intitle:\"index of\" \"parent directory\" {topic} (pdf OR docx OR zip)",
+     "fields": ["topic"], "tags": ["directory"]},
+
+    {"id": "repo_doc", "label": "Documentazione su repository pubblici", "category": "estrazione",
+     "desc": "Documentazione tecnica ospitata su piattaforme di code hosting.",
+     "template": "(site:github.com OR site:gitlab.com OR site:readthedocs.io) {topic} (filetype:pdf OR filetype:md)",
+     "fields": ["topic"], "tags": ["tecnico"]},
+
+    {"id": "brevetti", "label": "Brevetti e proprieta' industriale", "category": "estrazione",
+     "desc": "Testi brevettuali e documentazione collegata.",
+     "template": "{topic} (site:patents.google.com OR site:worldwide.espacenet.com OR filetype:pdf intext:\"patent application\")",
+     "fields": ["topic"], "tags": ["brevetti"]},
+
+    {"id": "verbali", "label": "Verbali e atti di riunione", "category": "estrazione",
+     "desc": "Verbali di consiglio, comitati e assemblee.",
+     "template": "site:{domain} filetype:pdf (verbale OR \"minutes of\" OR deliberazione OR determina)",
+     "fields": ["domain"], "tags": ["atti"]},
+
+    {"id": "org_footprint", "label": "Impronta documentale di un'organizzazione", "category": "ricognizione",
+     "desc": "Panoramica di cosa e' pubblicamente indicizzato per un'organizzazione, su qualsiasi dominio.",
+     "template": "\"{org}\" (filetype:pdf OR filetype:xlsx OR filetype:docx OR filetype:pptx)",
+     "fields": ["org"], "tags": ["osint"]},
+
+    {"id": "sottodomini", "label": "Mappatura sottodomini indicizzati", "category": "ricognizione",
+     "desc": "Sottodomini di un dominio presenti nell'indice del motore.",
+     "template": "site:*.{domain} -site:www.{domain}",
+     "fields": ["domain"], "tags": ["ricognizione"]},
+
+    {"id": "terze_parti", "label": "Documenti ospitati da terze parti", "category": "ricognizione",
+     "desc": "Documenti dell'organizzazione pubblicati su piattaforme esterne di condivisione.",
+     "template": "\"{org}\" (site:scribd.com OR site:slideshare.net OR site:docplayer.it OR site:yumpu.com OR site:issuu.com)",
+     "fields": ["org"], "tags": ["osint", "terze-parti"]},
+
+    {"id": "cloud_pubblico", "label": "Storage cloud collegato al dominio", "category": "ricognizione",
+     "desc": "Bucket e container di storage pubblico che citano il dominio. Verifica sempre i permessi dei tuoi bucket.",
+     "template": "(site:s3.amazonaws.com OR site:storage.googleapis.com OR site:blob.core.windows.net) {domain}",
+     "fields": ["domain"], "tags": ["cloud", "difensivo"]},
+
+    {"id": "recenti", "label": "Solo documenti recenti", "category": "estrazione",
+     "desc": "Limita l'estrazione documentale a una finestra temporale.",
+     "template": "{topic} filetype:pdf after:2024-01-01",
+     "fields": ["topic"], "tags": ["tempo"]},
+
+    {"id": "multilingua", "label": "Stesso tema in piu' lingue", "category": "estrazione",
+     "desc": "Allarga la ricerca ai corrispettivi in inglese di un termine tecnico.",
+     "template": "({topic} OR \"{topic}\") filetype:pdf (guide OR guida OR linee guida OR guidelines)",
+     "fields": ["topic"], "tags": ["ricerca"]},
+
+    {"id": "esclusioni", "label": "Ricerca con rumore escluso", "category": "estrazione",
+     "desc": "Schema di partenza per ripulire i risultati dalle fonti aggregatrici.",
+     "template": "{topic} filetype:pdf -site:pinterest.com -site:scribd.com -inurl:tag -inurl:category",
+     "fields": ["topic"], "tags": ["ricerca"]}
+  ]
+}

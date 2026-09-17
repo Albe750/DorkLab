@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "note": "Ogni controllo viene sempre applicato con un vincolo site: sul dominio autorizzato. I template usano {domain}.",
+  "severities": {
+    "critica": {"label": "Critica", "color": "#c0392b", "order": 0},
+    "alta": {"label": "Alta", "color": "#e67e22", "order": 1},
+    "media": {"label": "Media", "color": "#f1c40f", "order": 2},
+    "info": {"label": "Informativa", "color": "#3d7bff", "order": 3}
+  },
+  "checks": [
+    {
+      "id": "doc_esposti",
+      "label": "Documenti indicizzati",
+      "severity": "info",
+      "desc": "Inventario di tutti i documenti del dominio raggiungibili dai motori di ricerca.",
+      "why": "Non e' una vulnerabilita' in se', ma e' la base dell'inventario: molti incidenti nascono da un documento che nessuno sapeva fosse online.",
+      "queries": [
+        "site:{domain} (filetype:pdf OR filetype:docx OR filetype:xlsx OR filetype:pptx)",
+        "site:{domain} (filetype:doc OR filetype:xls OR filetype:ppt OR filetype:odt OR filetype:ods)"
+      ],
+      "remediation": [
+        "Mantieni un inventario dei documenti pubblicati e di chi li ha approvati.",
+        "Rimuovi i documenti obsoleti invece di lasciarli raggiungibili tramite URL diretto.",
+        "Ripulisci i metadati (autore, percorsi interni, revisioni) prima della pubblicazione."
+      ]
+    },
+    {
+      "id": "directory_listing",
+      "label": "Directory listing aperto",
+      "severity": "alta",
+      "desc": "Indici di directory navigabili che espongono l'intero contenuto di una cartella.",
+      "why": "Un listing aperto permette di scaricare file mai collegati da alcuna pagina, inclusi backup e bozze.",
+      "queries": [
+        "site:{domain} intitle:\"index of\"",
+        "site:{domain} intitle:\"index of\" (backup OR admin OR config OR db OR upload)",
+        "site:{domain} intext:\"Parent Directory\" intitle:\"index of\""
+      ],
+      "remediation": [
+        "Disattiva l'autoindex del web server (Apache: Options -Indexes; nginx: autoindex off).",
+        "Aggiungi un file index vuoto nelle cartelle di upload.",
+        "Sposta fuori dalla document root tutto cio' che non deve essere servito."
+      ]
+    },
+    {
+      "id": "backup_archivi",
+      "label": "Backup e archivi raggiungibili",
+      "severity": "critica",
+      "desc": "Copie di sicurezza, dump e archivi lasciati nella document root.",
+      "why": "Un singolo dump SQL o archivio del sito puo' contenere l'intero database, incluse le credenziali degli utenti.",
+      "queries": [
+        "site:{domain} (ext:bak OR ext:old OR ext:backup OR ext:swp OR ext:save)",
+        "site:{domain} (ext:sql OR ext:db OR ext:sqlite OR ext:dump)",
+        "site:{domain} (ext:zip OR ext:tar OR ext:gz OR ext:rar OR ext:7z)"
+      ],
+      "remediation": [
+        "Non generare mai backup dentro la document root; usa uno storage separato e cifrato.",
+        "Blocca a livello di web server le estensioni .bak/.old/.sql/.zip.",
+        "Verifica la rotazione dei backup e i permessi sul filesystem."
+      ]
+    },
+    {
+      "id": "config_segreti",
+      "label": "File di configurazione e segreti",
+      "severity": "critica",
+      "desc": "File di configurazione, variabili d'ambiente e chiavi accessibili via web.",
+      "why": "Contengono tipicamente stringhe di connessione, chiavi API e credenziali di servizio in chiaro.",
+      "queries": [
+        "site:{domain} (ext:env OR ext:ini OR ext:cfg OR ext:conf OR ext:config)",
+        "site:{domain} (ext:yml OR ext:yaml OR ext:toml OR ext:properties)",
+        "site:{domain} (ext:pem OR ext:key OR ext:ovpn OR ext:ppk)",
+        "site:{domain} (inurl:wp-config OR inurl:web.config OR inurl:.env OR inurl:settings.py)"
+      ],
+      "remediation": [
+        "Sposta i file di configurazione fuori dalla document root.",
+        "Gestisci i segreti con un vault o con variabili d'ambiente del processo, mai in file serviti.",
+        "Ruota immediatamente ogni chiave che risulti essere stata indicizzata.",
+        "Aggiungi regole di deny esplicite per i pattern .env, .git, .svn, *.conf."
+      ]
+    },
+    {
+      "id": "log_diagnostica",
+      "label": "Log e file di diagnostica",
+      "severity": "alta",
+      "desc": "Log applicativi, di errore e dump di debug pubblicamente leggibili.",
+      "why": "Rivelano percorsi interni, versioni software, nomi utente e talvolta token di sessione.",
+      "queries": [
+        "site:{domain} (ext:log OR ext:out OR ext:err OR ext:trace)",
+        "site:{domain} (inurl:debug OR inurl:phpinfo OR intitle:\"phpinfo()\")"
+      ],
+      "remediation": [
+        "Scrivi i log fuori dalla document root e ruotali.",
+        "Disattiva phpinfo() e le pagine di debug in produzione.",
+        "Imposta display_errors=Off e un gestore di errori generico per l'utente finale."
+      ]
+    },
+    {
+      "id": "errori_applicativi",
+      "label": "Messaggi di errore verbosi",
+      "severity": "media",
+      "desc": "Pagine che mostrano stack trace o errori di database indicizzati dai motori.",
+      "why": "Espongono struttura del database, framework, percorsi e a volte query complete: materiale di partenza per un attacco mirato.",
+      "queries": [
+        "site:{domain} (intext:\"SQL syntax\" OR intext:\"mysql_fetch\" OR intext:\"ORA-01756\")",
+        "site:{domain} (intext:\"Fatal error\" OR intext:\"Warning:\" OR intext:\"Notice:\")",
+        "site:{domain} intext:\"Traceback (most recent call last)\"",
+        "site:{domain} (intitle:\"Whitelabel Error Page\" OR intext:\"Exception Details\")"
+      ],
+      "remediation": [
+        "Configura pagine di errore personalizzate e generiche.",
+        "Disattiva la modalita' debug dei framework in produzione.",
+        "Richiedi la rimozione dall'indice delle pagine di errore gia' indicizzate."
+      ]
+    },
+    {
+      "id": "credenziali_testo",
+      "label": "Credenziali in file di testo",
+      "severity": "critica",
+      "desc": "File testuali che contengono parole chiave tipiche delle credenziali.",
+      "why": "Password o token in chiaro dentro documenti indicizzati sono sfruttabili immediatamente e senza alcun attacco tecnico.",
+      "queries": [
+        "site:{domain} (ext:txt OR ext:log OR ext:env) (intext:password OR intext:passwd OR intext:pwd)",
+        "site:{domain} (intext:\"api_key\" OR intext:\"apikey\" OR intext:\"secret_key\" OR intext:\"access_token\")",
+        "site:{domain} (filetype:xlsx OR filetype:csv) (intext:password OR intext:credenziali OR intext:utenze)"
+      ],
+      "remediation": [
+        "Considera compromessa ogni credenziale trovata: ruotala subito.",
+        "Rimuovi il file e richiedi la rimozione dalla cache dei motori.",
+        "Introduci una scansione automatica dei segreti nella pipeline di pubblicazione."
+      ]
+    },
+    {
+      "id": "portali_login",
+      "label": "Portali di autenticazione esposti",
+      "severity": "media",
+      "desc": "Pannelli di amministrazione e pagine di login raggiungibili pubblicamente.",
+      "why": "Un pannello amministrativo indicizzato e' un bersaglio per credential stuffing e brute force.",
+      "queries": [
+        "site:{domain} (inurl:login OR inurl:signin OR inurl:auth OR intitle:\"log in\")",
+        "site:{domain} (inurl:admin OR inurl:administrator OR inurl:cpanel OR inurl:wp-admin)",
+        "site:{domain} (inurl:phpmyadmin OR intitle:\"phpMyAdmin\" OR intitle:\"Webmin\")"
+      ],
+      "remediation": [
+        "Limita l'accesso ai pannelli amministrativi per IP o tramite VPN.",
+        "Attiva l'autenticazione a piu' fattori e il rate limiting sui tentativi di accesso.",
+        "Escludi i percorsi amministrativi dall'indicizzazione con X-Robots-Tag: noindex."
+      ]
+    },
+    {
+      "id": "ambienti_non_produzione",
+      "label": "Ambienti di test e staging indicizzati",
+      "severity": "alta",
+      "desc": "Sottodomini e percorsi di sviluppo raggiungibili dal pubblico.",
+      "why": "Gli ambienti non di produzione hanno spesso dati reali, credenziali deboli e patch mancanti.",
+      "queries": [
+        "site:{domain} (inurl:test OR inurl:staging OR inurl:dev OR inurl:uat OR inurl:preprod)",
+        "site:*.{domain} (intitle:staging OR intitle:test OR intitle:\"dev environment\")"
+      ],
+      "remediation": [
+        "Proteggi gli ambienti non produttivi con autenticazione a livello di web server.",
+        "Usa dati anonimizzati negli ambienti di test.",
+        "Blocca l'indicizzazione con X-Robots-Tag e restringi l'accesso alla rete aziendale."
+      ]
+    },
+    {
+      "id": "codice_versionamento",
+      "label": "Codice sorgente e metadati di versionamento",
+      "severity": "critica",
+      "desc": "Cartelle .git/.svn e sorgenti serviti come testo.",
+      "why": "Una directory .git accessibile consente di ricostruire l'intero codice sorgente e la sua storia, segreti inclusi.",
+      "queries": [
+        "site:{domain} (inurl:.git OR inurl:.svn OR inurl:.hg)",
+        "site:{domain} (ext:php OR ext:py OR ext:rb OR ext:java) intext:\"function\"",
+        "site:{domain} (inurl:composer.json OR inurl:package.json OR inurl:Gemfile OR inurl:requirements.txt)"
+      ],
+      "remediation": [
+        "Blocca l'accesso alle directory di versionamento a livello di web server.",
+        "Non fare deploy con git pull direttamente nella document root.",
+        "Verifica che gli interpreti siano configurati per eseguire e non servire i sorgenti."
+      ]
+    },
+    {
+      "id": "cloud_storage",
+      "label": "Storage cloud pubblico",
+      "severity": "alta",
+      "desc": "Bucket e container di storage collegati al dominio e leggibili pubblicamente.",
+      "why": "I bucket mal configurati sono una delle cause piu' frequenti di esposizione massiva di dati.",
+      "queries": [
+        "site:s3.amazonaws.com {domain}",
+        "site:storage.googleapis.com {domain}",
+        "site:blob.core.windows.net {domain}",
+        "site:{domain} (inurl:s3.amazonaws.com OR inurl:cdn OR inurl:bucket)"
+      ],
+      "remediation": [
+        "Verifica le ACL e le bucket policy: nega l'accesso pubblico a livello di account.",
+        "Attiva il logging degli accessi e gli alert su modifiche ai permessi.",
+        "Distribuisci i contenuti pubblici tramite CDN con origine privata."
+      ]
+    },
+    {
+      "id": "dati_personali",
+      "label": "Dati personali in documenti pubblici",
+      "severity": "critica",
+      "desc": "Documenti che potrebbero contenere dati personali o identificativi.",
+      "why": "Espone l'organizzazione a violazioni del GDPR oltre che al danno diretto per gli interessati.",
+      "queries": [
+        "site:{domain} (filetype:pdf OR filetype:xlsx) (intext:\"codice fiscale\" OR intext:\"partita iva\")",
+        "site:{domain} (filetype:xlsx OR filetype:csv) (intext:email OR intext:telefono OR intext:indirizzo)",
+        "site:{domain} filetype:pdf (intext:\"curriculum vitae\" OR intext:\"dati personali\" OR intext:riservato)"
+      ],
+      "remediation": [
+        "Applica minimizzazione e pseudonimizzazione prima di ogni pubblicazione.",
+        "Rimuovi il documento e valuta l'obbligo di notifica al Garante entro 72 ore.",
+        "Definisci un flusso di approvazione per la pubblicazione di documenti con dati personali."
+      ]
+    },
+    {
+      "id": "dispositivi_pannelli",
+      "label": "Dispositivi e pannelli di gestione",
+      "severity": "alta",
+      "desc": "Interfacce di stampanti, telecamere, NAS e apparati esposte sul dominio.",
+      "why": "Spesso mantengono credenziali di default e firmware non aggiornato, e fungono da testa di ponte verso la rete interna.",
+      "queries": [
+        "site:{domain} (intitle:\"Dashboard\" OR intitle:\"Control Panel\" OR intitle:\"Device Status\")",
+        "site:{domain} (inurl:8080 OR inurl:8443 OR inurl::9090)",
+        "site:{domain} (intitle:\"Router\" OR intitle:\"Printer\" OR intitle:\"NAS\" OR intitle:\"webcam\")"
+      ],
+      "remediation": [
+        "Nessuna interfaccia di gestione dovrebbe essere raggiungibile da Internet: usa VPN o bastion host.",
+        "Sostituisci tutte le credenziali di default e aggiorna il firmware.",
+        "Segmenta la rete separando gli apparati dai servizi pubblici."
+      ]
+    },
+    {
+      "id": "email_utenze",
+      "label": "Indirizzi e-mail e utenze",
+      "severity": "media",
+      "desc": "Indirizzi aziendali e nomi utente raccoglibili dai documenti pubblicati.",
+      "why": "Alimentano campagne di phishing mirato e attacchi di password spraying.",
+      "queries": [
+        "site:{domain} intext:\"@{domain}\"",
+        "site:{domain} (filetype:pdf OR filetype:xlsx) intext:\"@{domain}\"",
+        "site:{domain} inurl:wp-json/wp/v2/users"
+      ],
+      "remediation": [
+        "Usa alias funzionali al posto degli indirizzi nominativi nei documenti pubblici.",
+        "Disattiva l'enumerazione utenti delle API del CMS.",
+        "Rafforza l'autenticazione: MFA e criteri anti password spraying."
+      ]
+    }
+  ]
+}

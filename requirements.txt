@@ -1,0 +1,7 @@
+# Dipendenze di base
+PyQt6>=6.5          # su Fedora in alternativa: sudo dnf install python3-pyqt6
+requests>=2.28
+
+# Opzionali
+# anthropic>=0.40   # motore di ricerca agentico con Claude
+# pypdf>=4.0        # metadati PDF piu' completi

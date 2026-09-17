@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "groups": [
+    {"id": "documenti", "label": "Documenti", "icon": "doc", "sensitive": false,
+     "desc": "Testi, relazioni, manuali, normative.",
+     "extensions": ["pdf", "doc", "docx", "odt", "rtf", "txt", "tex", "epub", "djvu"]},
+
+    {"id": "fogli", "label": "Fogli di calcolo", "icon": "sheet", "sensitive": false,
+     "desc": "Tabelle e dataset tabellari.",
+     "extensions": ["xls", "xlsx", "xlsm", "csv", "tsv", "ods"]},
+
+    {"id": "presentazioni", "label": "Presentazioni", "icon": "slides", "sensitive": false,
+     "desc": "Slide di corsi, convegni, formazione.",
+     "extensions": ["ppt", "pptx", "odp", "key"]},
+
+    {"id": "dati", "label": "Dati strutturati", "icon": "data", "sensitive": false,
+     "desc": "Formati di interscambio e dump di dati.",
+     "extensions": ["json", "xml", "yaml", "yml", "sql", "db", "sqlite", "parquet", "rdf"]},
+
+    {"id": "archivi", "label": "Archivi e backup", "icon": "archive", "sensitive": true,
+     "desc": "Spesso contengono copie complete di siti o database. Categoria ad alto rischio se indicizzata.",
+     "extensions": ["zip", "rar", "7z", "tar", "gz", "tgz", "bak", "old", "backup"]},
+
+    {"id": "configurazione", "label": "Configurazione", "icon": "config", "sensitive": true,
+     "desc": "File di configurazione: possono contenere credenziali, chiavi e stringhe di connessione.",
+     "extensions": ["env", "ini", "cfg", "conf", "config", "properties", "yml", "toml", "ovpn", "pem", "key"]},
+
+    {"id": "log", "label": "Log e diagnostica", "icon": "log", "sensitive": true,
+     "desc": "Log applicativi e di sistema: rivelano percorsi, utenti, errori e talvolta token.",
+     "extensions": ["log", "out", "err", "trace", "dmp"]},
+
+    {"id": "codice", "label": "Codice sorgente", "icon": "code", "sensitive": true,
+     "desc": "Sorgenti pubblicati per errore su un dominio di produzione.",
+     "extensions": ["php", "py", "js", "java", "rb", "go", "sh", "ps1", "bat", "asp", "aspx", "jsp", "inc"]},
+
+    {"id": "tecnici", "label": "Tecnici e CAD", "icon": "cad", "sensitive": false,
+     "desc": "Disegni, schemi, modelli e documentazione di progetto.",
+     "extensions": ["dwg", "dxf", "step", "stp", "igs", "iges", "stl", "sldprt", "gbr"]},
+
+    {"id": "immagini", "label": "Immagini e media", "icon": "image", "sensitive": false,
+     "desc": "Utili per l'analisi dei metadati (EXIF, autore, software, geolocalizzazione).",
+     "extensions": ["jpg", "jpeg", "png", "tiff", "svg", "psd", "webp"]}
+  ]
+}
