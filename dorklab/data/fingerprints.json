@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "note": "Riconoscimento della tecnologia del sito da URL, estensioni, intestazioni HTTP e cookie. Ogni tecnologia porta con se' i dork piu' adatti.",
+  "technologies": [
+    {
+      "id": "aspnet", "label": "ASP.NET / IIS (Microsoft)", "color": "#3d7bff",
+      "url_markers": [".aspx", ".axd", ".ashx", ".asmx", "scriptresource.axd", "webresource.axd", "viewstate"],
+      "header_server": ["iis", "microsoft"],
+      "header_powered": ["asp.net"],
+      "header_extra": ["x-aspnet-version", "x-aspnetmvc-version"],
+      "cookies": ["asp.net_sessionid", ".aspxauth", "__requestverificationtoken"],
+      "dorks": [
+        {"label": "web.config esposti", "template": "site:{domain} ext:config"},
+        {"label": "Trace ASP.NET (trace.axd)", "template": "site:{domain} inurl:trace.axd"},
+        {"label": "Errori applicativi verbosi", "template": "site:{domain} intext:\"Server Error in\" intext:\"Application\""},
+        {"label": "Stack trace .NET", "template": "site:{domain} intext:\"System.Web\" intext:\"at \""},
+        {"label": "Web service (asmx)", "template": "site:{domain} ext:asmx"},
+        {"label": "Pagine di login", "template": "site:{domain} filetype:aspx (inurl:login OR inurl:admin)"},
+        {"label": "Elmah (log errori)", "template": "site:{domain} inurl:elmah.axd"}
+      ]
+    },
+    {
+      "id": "php", "label": "PHP", "color": "#8e44ad",
+      "url_markers": [".php", ".php3", ".php5", ".phtml"],
+      "header_server": [], "header_powered": ["php"], "header_extra": [],
+      "cookies": ["phpsessid"],
+      "dorks": [
+        {"label": "Configurazioni PHP", "template": "site:{domain} (inurl:config.php OR ext:inc) (ext:bak OR ext:old OR ext:txt)"},
+        {"label": "phpinfo esposto", "template": "site:{domain} (intitle:\"phpinfo()\" OR inurl:phpinfo.php)"},
+        {"label": "Errori/warning PHP", "template": "site:{domain} (intext:\"Warning: \" OR intext:\"Fatal error:\")"},
+        {"label": "Directory aperte con file php", "template": "site:{domain} intitle:\"index of\" (php OR inc OR bak)"}
+      ]
+    },
+    {
+      "id": "wordpress", "label": "WordPress", "color": "#16a085",
+      "url_markers": ["/wp-content/", "/wp-includes/", "/wp-admin/", "wp-login.php", "wp-json", "/wp-content/uploads"],
+      "header_server": [], "header_powered": [],
+      "header_extra": ["x-pingback"], "cookies": ["wordpress_", "wp-settings"],
+      "generator": ["wordpress"],
+      "dorks": [
+        {"label": "Documenti negli upload", "template": "site:{domain} inurl:wp-content/uploads (filetype:pdf OR filetype:xlsx OR filetype:docx)"},
+        {"label": "Enumerazione utenti (REST)", "template": "site:{domain} inurl:\"wp-json/wp/v2/users\""},
+        {"label": "wp-config di backup", "template": "site:{domain} inurl:wp-config (ext:bak OR ext:old OR ext:txt)"},
+        {"label": "Log di debug", "template": "site:{domain} inurl:wp-content/debug.log"},
+        {"label": "Backup del database", "template": "site:{domain} inurl:wp-content (ext:sql OR ext:zip)"}
+      ]
+    },
+    {
+      "id": "joomla", "label": "Joomla", "color": "#e67e22",
+      "url_markers": ["option=com_", "/administrator/", "/components/com_", "/media/jui/"],
+      "header_server": [], "header_powered": [], "header_extra": [],
+      "cookies": [], "generator": ["joomla"],
+      "dorks": [
+        {"label": "Pannello amministrativo", "template": "site:{domain} inurl:administrator intitle:login"},
+        {"label": "Componenti", "template": "site:{domain} inurl:option=com_"},
+        {"label": "configuration.php di backup", "template": "site:{domain} inurl:configuration.php (ext:bak OR ext:old OR ext:txt)"}
+      ]
+    },
+    {
+      "id": "drupal", "label": "Drupal", "color": "#2980b9",
+      "url_markers": ["/sites/default/", "/sites/all/", "/node/", "/misc/drupal.js", "?q=node"],
+      "header_server": [], "header_powered": [], "header_extra": ["x-generator", "x-drupal-cache"],
+      "cookies": [], "generator": ["drupal"],
+      "dorks": [
+        {"label": "File negli allegati", "template": "site:{domain} inurl:sites/default/files (filetype:pdf OR filetype:xlsx)"},
+        {"label": "CHANGELOG (versione)", "template": "site:{domain} inurl:CHANGELOG.txt intext:drupal"},
+        {"label": "settings.php di backup", "template": "site:{domain} inurl:settings.php (ext:bak OR ext:old OR ext:txt)"}
+      ]
+    },
+    {
+      "id": "java", "label": "Java (JSP / Servlet)", "color": "#c0392b",
+      "url_markers": [".jsp", ".jspx", ".do", ".action", ";jsessionid", "/servlet/"],
+      "header_server": ["tomcat", "jetty", "jboss", "wildfly", "glassfish"],
+      "header_powered": ["servlet", "jsp"], "header_extra": [],
+      "cookies": ["jsessionid"],
+      "dorks": [
+        {"label": "Pagine di errore Java", "template": "site:{domain} (intitle:\"Whitelabel Error Page\" OR intext:\"javax.servlet\")"},
+        {"label": "Console applicative", "template": "site:{domain} (inurl:manager/html OR intitle:\"Tomcat\")"},
+        {"label": "Stack trace", "template": "site:{domain} intext:\"java.lang.\" intext:\"at \""}
+      ]
+    },
+    {
+      "id": "apache", "label": "Apache HTTP Server", "color": "#7f8c8d",
+      "url_markers": [], "header_server": ["apache"], "header_powered": [], "header_extra": [],
+      "cookies": [],
+      "dorks": [
+        {"label": "Directory listing (autoindex)", "template": "site:{domain} intitle:\"index of\""},
+        {"label": "server-status", "template": "site:{domain} inurl:server-status"},
+        {"label": "File .htaccess/.htpasswd", "template": "site:{domain} (inurl:.htaccess OR inurl:.htpasswd)"}
+      ]
+    },
+    {
+      "id": "nginx", "label": "nginx", "color": "#27ae60",
+      "url_markers": [], "header_server": ["nginx"], "header_powered": [], "header_extra": [],
+      "cookies": [],
+      "dorks": [
+        {"label": "Directory autoindex", "template": "site:{domain} intitle:\"index of\""},
+        {"label": "Stato nginx", "template": "site:{domain} inurl:nginx_status"}
+      ]
+    }
+  ],
+  "always": [
+    {"label": "Tutti i documenti indicizzati", "template": "site:{domain} (filetype:pdf OR filetype:docx OR filetype:xlsx OR filetype:pptx)"},
+    {"label": "Backup e archivi", "template": "site:{domain} (ext:bak OR ext:old OR ext:zip OR ext:sql)"},
+    {"label": "Directory aperte", "template": "site:{domain} intitle:\"index of\""}
+  ]
+}

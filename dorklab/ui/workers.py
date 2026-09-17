@@ -194,3 +194,24 @@ class DiscoveryWorker(QtCore.QThread):
             except Exception as exc:  # noqa: BLE001
                 self.one_failed.emit(source_id, "Errore imprevisto: %s" % exc)
         self.finished_all.emit()
+
+
+class FingerprintWorker(QtCore.QThread):
+    """Analizza la tecnologia del sito (URL + una richiesta alle intestazioni)."""
+
+    finished_ok = Signal(object)          # FingerprintReport
+    failed = Signal(str)
+
+    def __init__(self, domain, urls, config, parent=None) -> None:
+        super().__init__(parent)
+        self.domain = domain
+        self.urls = urls
+        self.config = config
+
+    def run(self) -> None:  # pragma: no cover - thread
+        try:
+            from .. import fingerprint
+            report = fingerprint.analyze(self.domain, self.urls, self.config, probe=True)
+            self.finished_ok.emit(report)
+        except Exception as exc:  # noqa: BLE001
+            self.failed.emit(str(exc))

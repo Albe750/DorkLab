@@ -86,6 +86,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.results.status.connect(self.set_status)
         self.discovery.status.connect(self.set_status)
         self.discovery.send_to_results.connect(self._discovery_to_results)
+        self.discovery.load_in_builder.connect(self.load_query)
         self.ghdb.load_in_builder.connect(self.load_query)
         self.ghdb.use_for_audit.connect(self._ghdb_to_audit)
         self.ghdb.status.connect(self.set_status)

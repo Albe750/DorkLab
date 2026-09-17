@@ -13,7 +13,7 @@ from pathlib import Path
 from .. import audit, catalog, discovery, exporters
 from ..qtcompat import Qt, QtCore, QtGui, QtWidgets, Signal
 from .widgets import Badge, BubbleBar, choose_directory, confirm, info_label, message
-from .workers import DiscoveryWorker, DownloadWorker
+from .workers import DiscoveryWorker, DownloadWorker, FingerprintWorker
 
 
 class DiscoveryTab(QtWidgets.QWidget):
@@ -21,6 +21,7 @@ class DiscoveryTab(QtWidgets.QWidget):
 
     status = Signal(str)
     send_to_results = Signal(list)        # list[SearchResult]
+    load_in_builder = Signal(str)         # query dal fingerprint al costruttore
 
     def __init__(self, config, parent=None) -> None:
         super().__init__(parent)
@@ -163,6 +164,10 @@ class DiscoveryTab(QtWidgets.QWidget):
             "Sposta gli URL selezionati nella scheda Risultati per il download e "
             "l'estrazione dei metadati.")
         self.send_button.clicked.connect(self._send_selected)
+        self.fingerprint_button = QtWidgets.QPushButton("Fingerprint e dork")
+        self.fingerprint_button.setToolTip(
+            "Riconosce la tecnologia del sito e suggerisce i dork piu' adatti.")
+        self.fingerprint_button.clicked.connect(self._fingerprint)
         self.export_button = QtWidgets.QPushButton("Esporta\u2026")
         self.export_button.clicked.connect(self._export)
         self.stop_button = QtWidgets.QPushButton("Interrompi")
@@ -174,6 +179,7 @@ class DiscoveryTab(QtWidgets.QWidget):
         row.addWidget(self.prefer_archive)
         row.addWidget(self.download_button)
         row.addWidget(self.send_button)
+        row.addWidget(self.fingerprint_button)
         row.addWidget(self.export_button)
         row.addStretch(1)
         self.count_badge = Badge("0 URL", "#3d7bff")
@@ -287,10 +293,17 @@ class DiscoveryTab(QtWidgets.QWidget):
         self.status.emit("Scoperta completata: %d URL unici (%d con copia archiviata)"
                          % (len(self._items), with_archive))
         if not self._items:
-            message(self, "Nessun risultato",
-                    "Le fonti selezionate non hanno restituito URL per questo "
-                    "dominio. Prova ad aggiungere l'archivio Wayback o i sitemap.",
-                    "info")
+            if self._selected_filetypes():
+                message(self, "Nessun risultato",
+                        "Nessun URL trovato \u2014 ma hai un filtro \"tipi di documento\" "
+                        "attivo: le pagine del sito (es. .aspx, .php) e le directory "
+                        "vengono escluse. Togli le spunte dei tipi di documento per "
+                        "vedere tutto, oppure aggiungi \"Codice sorgente\".", "warn")
+            else:
+                message(self, "Nessun risultato",
+                        "Le fonti selezionate non hanno restituito URL per questo "
+                        "dominio. Prova ad aggiungere l'archivio Wayback o i sitemap.",
+                        "info")
 
     def _append_rows(self, urls, known_before) -> None:
         # ricostruzione completa: mantiene ordinamento e deduplica in modo semplice
@@ -393,6 +406,35 @@ class DiscoveryTab(QtWidgets.QWidget):
         self.send_to_results.emit(results)
         self.status.emit("Inviati %d URL alla scheda Risultati" % len(results))
 
+    def _fingerprint(self) -> None:
+        if not self._items:
+            message(self, "Nessun dato",
+                    "Esegui prima una scoperta: il fingerprint usa gli URL trovati.",
+                    "warn")
+            return
+        domain = self.domain_edit.text()
+        urls = [i.url for i in self._items]
+        self.status.emit("Analisi della tecnologia del sito\u2026")
+        self.fingerprint_button.setEnabled(False)
+        self._fp_worker = FingerprintWorker(domain, urls, self.config)
+        self._fp_worker.finished_ok.connect(self._on_fingerprint)
+        self._fp_worker.failed.connect(self._on_fingerprint_failed)
+        self._fp_worker.start()
+
+    def _on_fingerprint(self, report) -> None:
+        self.fingerprint_button.setEnabled(True)
+        from .dialog_fingerprint import FingerprintDialog
+
+        dialog = FingerprintDialog(report, self)
+        dialog.load_in_builder.connect(self.load_in_builder.emit)
+        tech = ", ".join(m.label for m in report.matches) or "nessuna tecnologia certa"
+        self.status.emit("Fingerprint: %s" % tech)
+        dialog.exec()
+
+    def _on_fingerprint_failed(self, error: str) -> None:
+        self.fingerprint_button.setEnabled(True)
+        message(self, "Fingerprint non riuscito", error, "warn")
+
     def _export(self) -> None:
         if not self._items:
             return
@@ -421,7 +463,8 @@ class DiscoveryTab(QtWidgets.QWidget):
         self.status.emit("Interruzione richiesta\u2026")
 
     def _set_actions_enabled(self, enabled: bool) -> None:
-        for widget in (self.download_button, self.send_button, self.export_button):
+        for widget in (self.download_button, self.send_button, self.export_button,
+                       self.fingerprint_button):
             widget.setEnabled(enabled)
 
     def set_domain(self, domain: str) -> None:

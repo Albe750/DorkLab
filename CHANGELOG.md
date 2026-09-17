@@ -2,6 +2,23 @@
 
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/).
 
+## [1.5.0] - 2026-09-17
+
+### Aggiunto
+
+- Fingerprint della tecnologia del sito: dalla scheda Scoperta, il pulsante
+  "Fingerprint e dork" riconosce lo stack (ASP.NET/IIS, PHP, WordPress, Joomla,
+  Drupal, Java, Apache, nginx) da estensioni, percorsi, intestazioni HTTP e
+  cookie, e propone i dork piu' adatti a quella tecnologia; ogni dork si carica
+  nel Costruttore con un clic. 33 dork suggeriti su 8 tecnologie.
+
+### Corretto
+
+- Scheda Scoperta: se un filtro "tipi di documento" e' attivo e la scansione
+  non trova nulla, ora l'avviso spiega che il filtro sta escludendo le pagine
+  (.aspx, .php) e le directory, invece di lasciare intendere che il sito non
+  abbia contenuti.
+
 ## [1.4.0] - 2026-09-17
 
 ### Corretto

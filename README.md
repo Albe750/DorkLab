@@ -211,6 +211,11 @@ opzionale per tipo di documento, e il recupero dalla copia archiviata. Il
 sondaggio dei percorsi resta disabilitato finche' non dichiari l'autorizzazione
 sul dominio.
 
+Il pulsante **Fingerprint e dork** riconosce la tecnologia del sito (ASP.NET,
+PHP, WordPress, Joomla, Drupal, Java, Apache, nginx) da estensioni, percorsi,
+intestazioni HTTP e cookie, e propone i dork piu' adatti a quella tecnologia,
+caricabili nel Costruttore con un clic.
+
 ### GHDB
 
 ![GHDB](docs/img/ghdb.png)
