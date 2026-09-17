@@ -2,6 +2,16 @@
 
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/).
 
+## [1.2.0] - 2026-09-17
+
+### Cambiato
+
+- Il motore agentico **Claude non richiede piu' il pacchetto `anthropic`**: se
+  installato lo usa, altrimenti chiama l'API Messages via HTTP diretto con
+  `requests` (gia' dipendenza). Funziona quindi in qualsiasi ambiente, anche
+  dove l'SDK non e' installabile; basta la chiave API. Il pacchetto `anthropic`
+  diventa una dipendenza opzionale.
+
 ## [1.1.0] - 2026-09-17
 
 ### Aggiunto

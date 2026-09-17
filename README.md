@@ -93,7 +93,7 @@ sudo dnf install python3-pyqt6 python3-requests
 pip install --user .
 
 # opzionali
-pip install --user anthropic   # motore di ricerca agentico con Claude
+pip install --user anthropic   # FACOLTATIVO: il motore Claude funziona anche senza
 pip install --user pypdf       # metadati PDF più completi
 ```
 
@@ -132,7 +132,7 @@ operatori dork.
 | Brave Search API | API | parziali | chiave |
 | SearXNG (istanza propria) | API | parziali | solo URL |
 | **Tavily** | agentico | interpretati | chiave |
-| Claude | agentico | interpretati | chiave Anthropic |
+| Claude | agentico | interpretati | chiave Anthropic (pacchetto `anthropic` facoltativo) |
 | Perplexity | agentico | interpretati | chiave |
 | Exa | agentico | interpretati | chiave |
 
@@ -171,6 +171,11 @@ I motori agentici interpretano la richiesta invece di eseguire `site:` o
 
 È la parte che rende utilizzabile un motore agentico per un audit: la comodità
 della ricerca sintetica senza perdere il controllo del perimetro.
+
+Il motore **Claude non richiede il pacchetto `anthropic`**: se è installato lo
+usa, altrimenti chiama l'API via HTTP diretto con `requests` (già dipendenza).
+Così funziona in qualsiasi ambiente, anche in un venv dove non riesci a
+installare l'SDK: basta la chiave (`ANTHROPIC_API_KEY` o Impostazioni → Motori).
 
 ---
 

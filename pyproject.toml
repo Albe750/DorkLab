@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dorklab"
-version = "1.1.0"
+version = "1.2.0"
 description = "Ricerca avanzata, estrazione documentale e protective dorking con interfaccia grafica"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -26,7 +26,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Motore di ricerca agentico basato su Claude
+# Motore Claude: FACOLTATIVO. Il motore funziona anche senza, via HTTP diretto
+# (usa 'requests', gia' richiesto). Installa l'SDK solo se lo preferisci.
 claude = ["anthropic>=0.40"]
 # Metadati PDF piu' completi
 pdf = ["pypdf>=4.0"]

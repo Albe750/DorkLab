@@ -28,6 +28,45 @@ from .http import post_json
 MAX_SEARCH_STEPS = 8
 
 
+def _bget(block, key, default=""):
+    """Accede a un campo sia su un oggetto dell'SDK sia su un dict (risposta HTTP)."""
+    if isinstance(block, dict):
+        return block.get(key, default)
+    return getattr(block, key, default)
+
+
+def _collect_blocks(blocks, *, results, seen, answers, provider_id, note):
+    """Estrae testo e risultati di ricerca web da una lista di blocchi.
+
+    Funziona identica sui blocchi dell'SDK (oggetti) e su quelli della risposta
+    HTTP grezza (dizionari), cosi' il motore Claude non dipende dal pacchetto
+    ``anthropic``.
+    """
+    from .base import SearchResult
+
+    for block in blocks or []:
+        block_type = _bget(block, "type")
+        if block_type == "text":
+            text = _bget(block, "text")
+            if text:
+                answers.append(text)
+        elif block_type == "web_search_tool_result":
+            content = _bget(block, "content", None)
+            if not isinstance(content, list):
+                code = _bget(content, "error_code") if content is not None else ""
+                if code:
+                    note("Ricerca web non riuscita: %s" % code)
+                continue
+            for item in content:
+                url = _bget(item, "url")
+                if not url or url in seen:
+                    continue
+                seen.add(url)
+                results.append(SearchResult(
+                    title=_bget(item, "title") or url, url=url, snippet="",
+                    provider=provider_id, published=_bget(item, "page_age") or ""))
+
+
 def _prompt_for(query: str, limit: int, translate: bool) -> str:
     """Compone il prompt da inviare a un motore agentico."""
     body = constraints_mod.to_natural_language(query) if translate else query
@@ -100,9 +139,12 @@ class ClaudeAgenticProvider(BaseProvider):
     dork_support = DORK_NONE
     homepage = "https://docs.claude.com/"
     description = ("Claude esegue piu' ricerche in autonomia e sintetizza i risultati "
-                   "con le fonti. I vincoli site: vengono passati come filtro di dominio.")
+                   "con le fonti. I vincoli site: vengono passati come filtro di dominio. "
+                   "Funziona senza installare il pacchetto 'anthropic': se non c'e', "
+                   "DorkLab usa l'API via HTTP diretto.")
     credentials = [Credential("anthropic_api_key", "Chiave API Anthropic",
-                              "console.anthropic.com. Puoi anche esportare ANTHROPIC_API_KEY.")]
+                              "console.anthropic.com. Puoi anche esportare ANTHROPIC_API_KEY. "
+                              "Il pacchetto 'anthropic' e' facoltativo.")]
 
     #: Variante dello strumento con filtro dinamico dei domini.
     WEB_SEARCH_TOOL = "web_search_20260209"
@@ -111,63 +153,68 @@ class ClaudeAgenticProvider(BaseProvider):
         return "https://www.google.com/search?q=%s" % quote_plus(query)
 
     def available(self, config) -> bool:
-        if not config.credential("anthropic_api_key"):
-            return False
-        try:
-            import anthropic  # noqa: F401
-        except ImportError:
-            return False
-        return True
+        # Basta la chiave: se il pacchetto 'anthropic' non c'e', si usa HTTP diretto.
+        return bool(config.credential("anthropic_api_key"))
+
+    def _build_tool(self, query: str) -> dict:
+        tool: dict = {"type": self.WEB_SEARCH_TOOL, "name": "web_search",
+                      "max_uses": MAX_SEARCH_STEPS}
+        allowed, blocked = _allowed_domains(query)
+        if allowed:                     # allowed_domains e blocked si escludono
+            tool["allowed_domains"] = allowed
+        elif blocked:
+            tool["blocked_domains"] = blocked
+        return tool
 
     def search(self, query: str, *, config, limit: int = 20, progress=None) -> SearchResponse:
-        try:
-            import anthropic
-        except ImportError as exc:
-            raise SearchError(
-                "Il pacchetto 'anthropic' non e' installato: pip install anthropic"
-            ) from exc
-
         api_key = config.credential("anthropic_api_key")
         if not api_key:
             raise SearchError("Chiave API Anthropic mancante.")
 
-        client = anthropic.Anthropic(api_key=api_key)
         model = config.get("claude_model") or "claude-opus-5"
-
-        tool: dict = {
-            "type": self.WEB_SEARCH_TOOL,
-            "name": "web_search",
-            "max_uses": MAX_SEARCH_STEPS,
-        }
-        allowed, blocked = _allowed_domains(query)
-        # allowed_domains e blocked_domains si escludono a vicenda.
-        if allowed:
-            tool["allowed_domains"] = allowed
-        elif blocked:
-            tool["blocked_domains"] = blocked
-
+        tool = self._build_tool(query)
         prompt = _prompt_for(query, limit, bool(config.get("agentic_translate", True)))
-        messages: list[dict] = [{"role": "user", "content": prompt}]
 
-        answer_parts: list[str] = []
+        # Si preferisce l'SDK ufficiale se installato; altrimenti HTTP diretto con
+        # 'requests', gia' dipendenza di DorkLab: cosi' il motore funziona anche
+        # senza il pacchetto 'anthropic'.
+        try:
+            import anthropic  # noqa: F401
+            has_sdk = True
+        except ImportError:
+            has_sdk = False
+
+        if has_sdk:
+            return self._search_via_sdk(query, config=config, limit=limit,
+                                        progress=progress, api_key=api_key,
+                                        model=model, tool=tool, prompt=prompt)
+        return self._search_via_http(query, config=config, limit=limit,
+                                      progress=progress, api_key=api_key,
+                                      model=model, tool=tool, prompt=prompt)
+
+    # ------------------------------------------------------------------ SDK
+    def _search_via_sdk(self, query, *, config, limit, progress, api_key,
+                        model, tool, prompt) -> SearchResponse:
+        import anthropic
+
+        client = anthropic.Anthropic(api_key=api_key)
+        messages: list[dict] = [{"role": "user", "content": prompt}]
+        answers: list[str] = []
         results: list[SearchResult] = []
         seen: set[str] = set()
         restarts = 0
+        response = None
 
         while True:
             self._note(progress, "Claude: ricerca in corso%s" %
                        (" (ripresa %d)" % restarts if restarts else ""))
             try:
                 with client.beta.messages.stream(
-                    model=model,
-                    max_tokens=16000,
+                    model=model, max_tokens=16000,
                     thinking={"type": "adaptive"},
-                    # I fallback lato server sono opt-in: senza, un rifiuto di
-                    # policy interrompe semplicemente la richiesta.
                     betas=["server-side-fallback-2026-06-01"],
                     fallbacks=[{"model": "claude-opus-4-8"}],
-                    tools=[tool],
-                    messages=messages,
+                    tools=[tool], messages=messages,
                 ) as stream:
                     response = stream.get_final_message()
             except anthropic.APIStatusError as exc:
@@ -178,55 +225,82 @@ class ClaudeAgenticProvider(BaseProvider):
             if response.stop_reason == "refusal":
                 detail = getattr(getattr(response, "stop_details", None), "explanation", "")
                 raise SearchError(
-                    "La richiesta e' stata declinata dai filtri del modello. %s" % (detail or "")
-                )
+                    "La richiesta e' stata declinata dai filtri del modello. %s" % (detail or ""))
 
-            for block in response.content:
-                block_type = getattr(block, "type", "")
-                if block_type == "text":
-                    text = getattr(block, "text", "")
-                    if text:
-                        answer_parts.append(text)
-                elif block_type == "web_search_tool_result":
-                    content = getattr(block, "content", None)
-                    # In caso di errore `content` e' un oggetto, non una lista.
-                    if not isinstance(content, list):
-                        code = getattr(content, "error_code", "")
-                        if code:
-                            self._note(progress, "Ricerca web non riuscita: %s" % code)
-                        continue
-                    for item in content:
-                        url = getattr(item, "url", "")
-                        if not url or url in seen:
-                            continue
-                        seen.add(url)
-                        results.append(SearchResult(
-                            title=getattr(item, "title", "") or url,
-                            url=url,
-                            snippet="",
-                            provider=self.id,
-                            published=getattr(item, "page_age", "") or "",
-                        ))
+            _collect_blocks(response.content, results=results, seen=seen, answers=answers,
+                            provider_id=self.id,
+                            note=lambda m: self._note(progress, m))
 
             if response.stop_reason != "pause_turn":
                 break
             restarts += 1
             if restarts > 4:
                 break
-            # Turno messo in pausa dallo strumento server: lo si riprende
-            # rimandando la conversazione con il turno parziale in coda.
-            messages = [
-                {"role": "user", "content": prompt},
-                {"role": "assistant", "content": response.content},
-            ]
+            messages = [{"role": "user", "content": prompt},
+                        {"role": "assistant", "content": response.content}]
 
         return SearchResponse(
             provider=self.id, query=query, results=results[:limit],
-            answer="\n\n".join(answer_parts).strip(),
+            answer="\n\n".join(answers).strip(),
             meta={"modello": getattr(response, "model", model),
-                  "ricerche": len(results)},
-        )
+                  "ricerche": len(results), "via": "SDK anthropic"})
 
+    # ------------------------------------------------------------ HTTP diretto
+    def _search_via_http(self, query, *, config, limit, progress, api_key,
+                         model, tool, prompt) -> SearchResponse:
+        """Interroga l'API Messages via HTTP, senza il pacchetto 'anthropic'.
+
+        Richiesta minimale (nessun header beta) per massimizzare la compatibilita':
+        modello, ricerca web nativa, pensiero adattivo. Il rifiuto di policy viene
+        segnalato con un errore chiaro invece che con un fallback lato server.
+        """
+        from .http import post_json
+
+        headers = {
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        endpoint = "https://api.anthropic.com/v1/messages"
+        messages: list[dict] = [{"role": "user", "content": prompt}]
+        answers: list[str] = []
+        results: list[SearchResult] = []
+        seen: set[str] = set()
+        restarts = 0
+        payload: dict = {}
+
+        while True:
+            self._note(progress, "Claude (HTTP): ricerca in corso%s" %
+                       (" (ripresa %d)" % restarts if restarts else ""))
+            body = {
+                "model": model, "max_tokens": 16000,
+                "thinking": {"type": "adaptive"},
+                "tools": [tool], "messages": messages,
+            }
+            payload = post_json(endpoint, json=body, headers=headers, timeout=180)
+
+            if payload.get("stop_reason") == "refusal":
+                detail = (payload.get("stop_details") or {}).get("explanation", "")
+                raise SearchError(
+                    "La richiesta e' stata declinata dai filtri del modello. %s" % (detail or ""))
+
+            _collect_blocks(payload.get("content"), results=results, seen=seen,
+                            answers=answers, provider_id=self.id,
+                            note=lambda m: self._note(progress, m))
+
+            if payload.get("stop_reason") != "pause_turn":
+                break
+            restarts += 1
+            if restarts > 4:
+                break
+            messages = [{"role": "user", "content": prompt},
+                        {"role": "assistant", "content": payload.get("content")}]
+
+        return SearchResponse(
+            provider=self.id, query=query, results=results[:limit],
+            answer="\n\n".join(answers).strip(),
+            meta={"modello": payload.get("model", model),
+                  "ricerche": len(results), "via": "HTTP diretto"})
 
 class PerplexityProvider(BaseProvider):
     """Perplexity Sonar: risposta sintetica con citazioni."""
