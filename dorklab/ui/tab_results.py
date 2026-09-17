@@ -7,7 +7,7 @@ from pathlib import Path
 from .. import exporters, metadata as metadata_mod
 from ..qtcompat import Qt, QtCore, QtGui, QtWidgets, Signal
 from ..providers.base import SearchResult
-from .widgets import Badge, confirm, info_label, message
+from .widgets import Badge, choose_directory, confirm, info_label, message
 from .workers import DownloadWorker, ExtractWorker
 
 COLUMNS = ["#", "Titolo", "Tipo", "Dominio", "Vincoli", "Estratto"]
@@ -315,17 +315,23 @@ class ResultsTab(QtWidgets.QWidget):
         if not chosen:
             message(self, "Nessuna selezione", "Seleziona almeno un risultato.", "warn")
             return
-        destination = self.config.download_path()
-        if not confirm(self, "Scaricare i documenti",
-                       "Scarico %d file in:\n%s\n\nRitardo fra le richieste: %.1f s\n"
-                       "Rispetto di robots.txt: %s"
-                       % (len(chosen), destination,
-                          float(self.config.get("request_delay") or 1.0),
-                          "si" if self.config.get("respect_robots", True) else "no")):
-            return
+        # scelta interattiva della cartella: parte da quella predefinita
+        destination = choose_directory(
+            self, self.config.download_path(),
+            "Dove salvare %d file" % len(chosen))
+        if not destination:
+            return                       # annullato dall'utente
+        # ricorda la scelta per la volta successiva
+        self.config.set("download_dir", destination)
+        try:
+            self.config.save()
+        except OSError:
+            pass
 
+        self._download_dir = destination
         self._begin_work("Download in corso", len(chosen))
-        self._worker = DownloadWorker([item.url for item in chosen], self.config)
+        self._worker = DownloadWorker([item.url for item in chosen], self.config,
+                                      directory=destination)
         self._worker.progress.connect(self._on_progress)
         self._worker.finished_all.connect(self._on_download_done)
         self._worker.failed.connect(self._on_worker_failed)

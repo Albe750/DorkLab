@@ -195,7 +195,9 @@ bilanci, directory aperte, brevetti, mappatura dei sottodomini.
 
 Tabella ordinabile con tipo, dominio ed esito della verifica dei vincoli.
 Da qui si aprono, si copiano, si **scaricano** i documenti e se ne estraggono i
-**metadati aggregati**. Esportazione in CSV, JSON, Markdown e HTML.
+**metadati aggregati**. Al download scegli la cartella di destinazione con un
+selettore (la scelta viene ricordata) e a fine scaricamento puoi aprirla
+direttamente. Esportazione in CSV, JSON, Markdown e HTML.
 
 ### Scoperta
 

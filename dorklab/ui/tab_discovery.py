@@ -12,7 +12,7 @@ from pathlib import Path
 
 from .. import audit, catalog, discovery, exporters
 from ..qtcompat import Qt, QtCore, QtGui, QtWidgets, Signal
-from .widgets import Badge, BubbleBar, confirm, info_label, message
+from .widgets import Badge, BubbleBar, choose_directory, confirm, info_label, message
 from .workers import DiscoveryWorker, DownloadWorker
 
 
@@ -346,16 +346,22 @@ class DiscoveryTab(QtWidgets.QWidget):
         prefer = self.prefer_archive.isChecked()
         urls = [(item.archived_url if (prefer and item.archived_url) else item.url)
                 for item in chosen]
-        if not confirm(self, "Scaricare i documenti",
-                       "Scarico %d file in:\n%s\n\n%s"
-                       % (len(urls), self.config.download_path(),
-                          "Dalla copia archiviata dove disponibile."
-                          if prefer else "Dalla versione online.")):
+        destination = choose_directory(
+            self, self.config.download_path(),
+            "Dove salvare %d file%s" % (len(urls),
+                                        " (copia archiviata)" if prefer else ""))
+        if not destination:
             return
+        self.config.set("download_dir", destination)
+        try:
+            self.config.save()
+        except OSError:
+            pass
         self.progress.setVisible(True)
         self.progress.setRange(0, len(urls))
         self.stop_button.setVisible(True)
-        self._download_worker = DownloadWorker(urls, self.config)
+        self._download_dir = destination
+        self._download_worker = DownloadWorker(urls, self.config, directory=destination)
         self._download_worker.progress.connect(
             lambda i, t, u: (self.progress.setValue(i),
                              self.status.emit("%d/%d %s" % (i, t, u[:80]))))
@@ -368,11 +374,15 @@ class DiscoveryTab(QtWidgets.QWidget):
         self.progress.setVisible(False)
         self.stop_button.setVisible(False)
         ok = sum(1 for o in outcomes if o.ok)
-        message(self, "Download completato",
-                "Scaricati %d file su %d in:\n%s"
-                % (ok, len(outcomes), self.config.download_path()),
-                "info" if ok else "warn")
-        self.status.emit("Download: %d/%d" % (ok, len(outcomes)))
+        destination = getattr(self, "_download_dir", "") or self.config.download_path()
+        summary = "Scaricati %d file su %d in:\n%s" % (ok, len(outcomes), destination)
+        if ok:
+            summary += "\n\nApro la cartella?"
+            if confirm(self, "Download completato", summary):
+                QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(destination))
+        else:
+            message(self, "Download non riuscito", summary, "warn")
+        self.status.emit("Download: %d/%d in %s" % (ok, len(outcomes), destination))
 
     def _send_selected(self) -> None:
         chosen = self._selected_items() or self._items

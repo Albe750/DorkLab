@@ -2,6 +2,17 @@
 
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/).
 
+## [1.3.0] - 2026-09-17
+
+### Aggiunto
+
+- Selezione interattiva della cartella di destinazione al download: un selettore
+  di cartella (che parte da quella predefinita) sia nella scheda Risultati sia
+  in Scoperta. La scelta viene ricordata per la volta successiva e la cartella
+  viene creata se non esiste.
+- A fine download, proposta di aprire la cartella di destinazione: aiuta a
+  trovare subito i file scaricati.
+
 ## [1.2.0] - 2026-09-17
 
 ### Cambiato

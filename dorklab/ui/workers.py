@@ -90,11 +90,13 @@ class DownloadWorker(QtCore.QThread):
     failed = Signal(str)
 
     def __init__(self, urls: list[str], config, extract_meta: bool = True,
-                 parent=None) -> None:
+                 directory: str = "", parent=None) -> None:
         super().__init__(parent)
         self.urls = urls
         self.config = config
         self.extract_meta = extract_meta
+        # cartella scelta dall'utente; se vuota si usa quella predefinita
+        self.directory = directory
         self._downloader: Downloader | None = None
 
     def stop(self) -> None:
@@ -104,7 +106,7 @@ class DownloadWorker(QtCore.QThread):
     def run(self) -> None:  # pragma: no cover - thread
         try:
             self._downloader = Downloader(
-                self.config.download_path(),
+                self.directory or self.config.download_path(),
                 user_agent=self.config.get("user_agent"),
                 delay=float(self.config.get("request_delay") or 1.0),
                 respect_robots=bool(self.config.get("respect_robots", True)),

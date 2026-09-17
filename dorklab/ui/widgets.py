@@ -312,6 +312,26 @@ def info_label(text: str, parent=None) -> QtWidgets.QLabel:
     return label
 
 
+def choose_directory(parent, start: str, title: str = "Scegli la cartella di destinazione") -> str:
+    """Apre un selettore di cartella e restituisce il percorso scelto (o "").
+
+    Parte dalla cartella indicata e permette di crearne una nuova. Se la cartella
+    scelta non esiste ancora, la crea.
+    """
+    from pathlib import Path
+
+    chosen = QtWidgets.QFileDialog.getExistingDirectory(
+        parent, title, start or str(Path.home()),
+        QtWidgets.QFileDialog.Option.ShowDirsOnly)
+    if not chosen:
+        return ""
+    try:
+        Path(chosen).mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
+    return chosen
+
+
 def message(parent, title: str, text: str, icon: str = "info") -> None:
     box = QtWidgets.QMessageBox(parent)
     box.setWindowTitle(title)
