@@ -164,7 +164,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.delay.setRange(0.0, 30.0)
         self.delay.setSingleStep(0.5)
         self.delay.setSuffix(" s")
-        self.delay.setValue(float(self.config.get("request_delay") or 1.5))
+        self.delay.setValue(self.config.number("request_delay", 1.5))
         layout.addRow("Ritardo fra le richieste", self.delay)
 
         self.max_mb = QtWidgets.QSpinBox()

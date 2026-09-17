@@ -98,6 +98,20 @@ class Config:
         return "non impostata"
 
     # ------------------------------------------------------------------ cartelle
+    def number(self, key: str, default: float) -> float:
+        """Legge un valore numerico rispettando lo zero.
+
+        Serve a non trasformare uno 0 legittimo nel valore predefinito, come
+        farebbe il pattern `config.get(key) or default`.
+        """
+        value = self._values.get(key, default)
+        if value is None:
+            return float(default)
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return float(default)
+
     def download_path(self) -> str:
         value = str(self._values.get("download_dir") or "").strip()
         return value or str(default_download_dir())

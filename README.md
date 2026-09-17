@@ -55,7 +55,9 @@ pesca il resto, dal dominio che indichi, attraverso sei fonti:
   dal server, raccogliendo file non collegati da alcuna pagina;
 - **Sondaggio percorsi** — prova un elenco curato di percorsi (backup,
   configurazioni, cartelle di documenti) contro il server: e' ricognizione
-  attiva e richiede la conferma di autorizzazione, come l'audit.
+  attiva e richiede la conferma di autorizzazione, come l'audit. Riconosce i
+  siti *soft-404* (che rispondono 200 a qualsiasi URL) e ne esclude i falsi
+  positivi, così non ti segnala file che in realtà non esistono.
 
 Gli URL scoperti passano dalla stessa pipeline dei risultati di ricerca:
 download, estrazione dei metadati, export. E c'e' l'opzione **"Scarica dalla

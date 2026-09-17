@@ -161,3 +161,60 @@ def test_dedupe_preferisce_la_copia_archiviata():
     merged = discovery.dedupe([senza, con])
     assert len(merged) == 1
     assert merged[0].has_archive
+
+
+def _resp(status, ctype="text/html", length=""):
+    from unittest.mock import MagicMock
+
+    mock = MagicMock()
+    mock.status_code = status
+    mock.headers = {"Content-Type": ctype, "Content-Length": length}
+    return mock
+
+
+def test_probe_filtra_i_soft_404(config):
+    """Un sito che risponde 200 a qualsiasi percorso non deve produrre falsi file."""
+    from dorklab.discovery.probe import PathProbeSource
+
+    config.set("request_delay", 0)
+
+    def fake(url, **kwargs):
+        if "nonesiste.xyzq" in url:          # baseline: 200 a un percorso inventato
+            return _resp(200, "text/html", "5000")
+        if url.endswith("backup.zip"):       # vero file: tipo diverso
+            return _resp(200, "application/zip", "200000")
+        if url.endswith("/admin/"):          # protetto: reale
+            return _resp(403, "text/html", "1200")
+        return _resp(200, "text/html", "5000")   # pagina generica per tutto il resto
+
+    with patch("dorklab.discovery.probe.get", side_effect=fake):
+        response = PathProbeSource().discover(
+            "soft.example", config=config, authorized=True, limit=1000)
+
+    assert response.meta["soft_404"] == "si"
+    titoli = {u.title for u in response.urls}
+    assert "/backup.zip" in titoli          # il vero file resta
+    assert "/admin/" in titoli              # la risorsa protetta resta
+    assert "/.env" not in titoli            # i falsi 200 spariscono
+    assert response.meta["falsi_positivi_esclusi"] > 50
+
+
+def test_probe_sito_con_404_corretti(config):
+    """Se il sito fa 404 corretti, i 200 sono considerati reali."""
+    from dorklab.discovery.probe import PathProbeSource
+
+    config.set("request_delay", 0)
+
+    def fake(url, **kwargs):
+        if "nonesiste.xyzq" in url:
+            return _resp(404, "text/html", "500")
+        if url.endswith(".env"):
+            return _resp(200, "text/plain", "300")
+        return _resp(404, "text/html", "500")
+
+    with patch("dorklab.discovery.probe.get", side_effect=fake):
+        response = PathProbeSource().discover(
+            "hard.example", config=config, authorized=True, limit=1000)
+
+    assert response.meta["soft_404"] == "no"
+    assert any(u.title == "/.env" for u in response.urls)

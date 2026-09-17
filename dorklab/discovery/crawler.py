@@ -55,7 +55,7 @@ class DirectoryCrawlSource(BaseSource):
         import time
 
         user_agent = config.get("user_agent")
-        delay = max(0.0, float(config.get("request_delay") or 1.0))
+        delay = max(0.0, config.number("request_delay", 1.0))
         respect_robots = bool(config.get("respect_robots", True))
 
         # Punto di partenza: la radice del dominio, piu' alcune cartelle comuni

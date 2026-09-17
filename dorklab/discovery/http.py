@@ -30,11 +30,13 @@ def session(user_agent: str):
 
 
 def get(url: str, *, user_agent: str, params: dict | None = None,
-        timeout: int = DEFAULT_TIMEOUT, handle=None, stream: bool = False):
+        timeout: int = DEFAULT_TIMEOUT, handle=None, stream: bool = False,
+        allow_redirects: bool = True):
     _require()
     caller = handle or requests
     try:
         response = caller.get(url, params=params, timeout=timeout, stream=stream,
+                              allow_redirects=allow_redirects,
                               headers=None if handle else {"User-Agent": user_agent})
     except Exception as exc:  # pragma: no cover - rete
         raise DiscoveryError("Connessione fallita: %s" % exc) from exc

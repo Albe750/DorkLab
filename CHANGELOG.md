@@ -2,6 +2,21 @@
 
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/).
 
+## [1.4.0] - 2026-09-17
+
+### Corretto
+
+- Sondaggio percorsi: i siti che rispondono 200 a qualsiasi URL (soft-404)
+  producevano decine di falsi positivi - documenti segnalati come presenti che
+  poi non erano scaricabili. Ora il sondaggio stabilisce una baseline con due
+  percorsi inventati: se il sito e' soft-404, riporta solo i contenuti
+  realmente diversi dalla pagina generica (veri file, lunghezza diversa) e le
+  risorse protette (401/403), escludendo i falsi 200.
+- Ritardo fra le richieste impostato a 0 veniva ignorato e forzato a 1 secondo
+  (`config.get(...) or default` trasformava lo 0 in default). Nuovo helper
+  `Config.number()` che rispetta lo zero; corretto in sondaggio, crawler,
+  download e impostazioni.
+
 ## [1.3.0] - 2026-09-17
 
 ### Aggiunto

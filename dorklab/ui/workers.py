@@ -108,7 +108,7 @@ class DownloadWorker(QtCore.QThread):
             self._downloader = Downloader(
                 self.directory or self.config.download_path(),
                 user_agent=self.config.get("user_agent"),
-                delay=float(self.config.get("request_delay") or 1.0),
+                delay=self.config.number("request_delay", 1.0),
                 respect_robots=bool(self.config.get("respect_robots", True)),
                 max_mb=int(self.config.get("max_download_mb") or 50),
             )
