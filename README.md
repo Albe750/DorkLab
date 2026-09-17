@@ -363,4 +363,14 @@ autorizzazioni di cui dispone.
 
 ## Licenza
 
-MIT — vedi [LICENSE](LICENSE).
+**GNU Affero General Public License v3 (AGPL-3.0)** — vedi [LICENSE](LICENSE).
+
+DorkLab e' software libero: puoi usarlo, studiarlo, modificarlo e ridistribuirlo,
+a patto che ogni versione modificata resti sotto AGPLv3 e ne renda disponibile il
+codice sorgente. La AGPL aggiunge alla GPL una clausola importante: se offri una
+versione modificata **come servizio in rete**, devi mettere il sorgente a
+disposizione anche degli utenti che vi accedono da remoto.
+
+Scelta coerente anche con la dipendenza da PyQt6 (rilasciato da Riverbank sotto
+GPLv3 o licenza commerciale). Chi preferisce evitare la GPL puo' usare il binding
+PySide6 (LGPL), gia' supportato da `qtcompat.py`.

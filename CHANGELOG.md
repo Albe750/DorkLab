@@ -2,6 +2,17 @@
 
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/).
 
+## [1.6.1] - 2026-09-17
+
+### Cambiato
+
+- Licenza da MIT a **GNU Affero General Public License v3 (AGPL-3.0)**: copyleft
+  forte che tiene aperto il codice e i suoi derivati, con la clausola AGPL
+  sull'uso in rete (chi offre una versione modificata come servizio deve
+  renderne disponibile il sorgente). Coerente con la dipendenza da PyQt6
+  (GPLv3). Aggiornati LICENSE, classifier in pyproject, intestazione nel
+  package e README.
+
 ## [1.6.0] - 2026-09-17
 
 ### Aggiunto
