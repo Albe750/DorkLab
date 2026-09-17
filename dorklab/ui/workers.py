@@ -107,10 +107,11 @@ class DownloadWorker(QtCore.QThread):
         try:
             self._downloader = Downloader(
                 self.directory or self.config.download_path(),
-                user_agent=self.config.get("user_agent"),
+                user_agent=self.config.effective_user_agent(),
                 delay=self.config.number("request_delay", 1.0),
                 respect_robots=bool(self.config.get("respect_robots", True)),
                 max_mb=int(self.config.get("max_download_mb") or 50),
+                jitter=self.config.number("request_jitter", 0.0),
             )
             outcomes = self._downloader.fetch_all(self.urls, progress=self.progress.emit)
             metadata = []

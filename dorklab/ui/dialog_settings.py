@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .. import providers
-from ..config import ENV_KEYS
+from ..config import ENV_KEYS, NETWORK_PROFILES
 from ..qtcompat import Qt, QtCore, QtWidgets
 from .widgets import Badge, info_label, message
 
@@ -152,6 +152,17 @@ class SettingsDialog(QtWidgets.QDialog):
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QFormLayout(widget)
 
+        self.profile = QtWidgets.QComboBox()
+        for key, profile in NETWORK_PROFILES.items():
+            self.profile.addItem(profile["label"], key)
+        index = self.profile.findData(self.config.get("network_profile") or "standard")
+        self.profile.setCurrentIndex(max(0, index))
+        self.profile.currentIndexChanged.connect(self._profile_changed)
+        layout.addRow("Profilo di rete", self.profile)
+        self.profile_desc = info_label("")
+        layout.addRow("", self.profile_desc)
+        self._profile_changed()
+
         row = QtWidgets.QHBoxLayout()
         self.download_dir = QtWidgets.QLineEdit(self.config.download_path())
         browse = QtWidgets.QPushButton("Sfoglia…")
@@ -184,6 +195,16 @@ class SettingsDialog(QtWidgets.QDialog):
             "corretto di scaricare documenti pubblici senza pesare sui server "
             "altrui ne' farsi bloccare."))
         return widget
+
+    def _profile_changed(self) -> None:
+        key = self.profile.currentData()
+        profile = NETWORK_PROFILES.get(key, {})
+        self.profile_desc.setText(profile.get("desc", ""))
+        # riflette i valori del profilo nei campi ritardo/robots (modificabili a mano)
+        if hasattr(self, "delay"):
+            self.delay.setValue(float(profile.get("request_delay", 1.5)))
+        if hasattr(self, "respect_robots"):
+            self.respect_robots.setChecked(bool(profile.get("respect_robots", True)))
 
     def _pick_directory(self) -> None:
         chosen = QtWidgets.QFileDialog.getExistingDirectory(
@@ -221,6 +242,8 @@ class SettingsDialog(QtWidgets.QDialog):
         self.config.set("download_dir", self.download_dir.text().strip())
         self.config.set("request_delay", self.delay.value())
         self.config.set("max_download_mb", self.max_mb.value())
+        self.config.apply_profile(self.profile.currentData() or "standard")
+        # i campi manuali sotto possono raffinare cio' che il profilo ha impostato
         self.config.set("respect_robots", self.respect_robots.isChecked())
         self.config.set("user_agent", self.user_agent.text().strip())
         self.config.set("theme", self.theme.currentData())

@@ -110,7 +110,7 @@ def probe_headers(domain: str, config) -> dict:
     domain = normalize_domain(domain)
     for base in ("https://%s/" % domain, "https://www.%s/" % domain):
         try:
-            response = get(base, user_agent=config.get("user_agent"),
+            response = get(base, user_agent=config.effective_user_agent(),
                            timeout=15, stream=True, allow_redirects=True)
             headers = dict(response.headers)
             response.close()

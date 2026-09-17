@@ -35,7 +35,7 @@ class WaybackSource(BaseSource):
 
     def discover(self, target, *, config, limit=500, filetypes=None,
                  progress=None, authorized=False) -> DiscoveryResponse:
-        user_agent = config.get("user_agent")
+        user_agent = config.effective_user_agent()
         self._note(progress, "Wayback Machine: interrogazione dell'indice CDX")
 
         params = {

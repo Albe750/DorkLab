@@ -35,7 +35,7 @@ class SitemapSource(BaseSource):
 
     def discover(self, target, *, config, limit=1000, filetypes=None,
                  progress=None, authorized=False) -> DiscoveryResponse:
-        user_agent = config.get("user_agent")
+        user_agent = config.effective_user_agent()
         base = "https://%s" % target
         found: dict[str, DiscoveredUrl] = {}
         notes: list[str] = []

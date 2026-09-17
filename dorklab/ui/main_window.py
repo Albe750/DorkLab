@@ -240,6 +240,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if dialog.exec():
             self.apply_theme()
             self.builder.refresh_providers()
+            # riallinea il toggle "solo archivio" al profilo di rete scelto
+            self.discovery.archive_only.setChecked(self.config.archive_only())
             self.set_status("Impostazioni salvate")
 
     def apply_theme(self) -> None:

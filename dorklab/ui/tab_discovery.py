@@ -87,6 +87,16 @@ class DiscoveryTab(QtWidgets.QWidget):
             "a verificarlo (necessario per il sondaggio attivo dei percorsi).")
         self.authorized.toggled.connect(self._update_state)
         layout.addWidget(self.authorized)
+
+        self.archive_only = QtWidgets.QCheckBox(
+            "Solo fonti d'archivio: non contattare il sito (nessuna traccia nei suoi log)")
+        self.archive_only.setToolTip(
+            "Usa solo Wayback, Common Crawl e Certificate Transparency: il dominio "
+            "non viene mai interrogato, quindi non registra la tua attivita'.")
+        self.archive_only.toggled.connect(self._update_state)
+        # allineato al profilo di rete scelto nelle impostazioni
+        self.archive_only.setChecked(self.config.archive_only())
+        layout.addWidget(self.archive_only)
         return box
 
     def _build_sources(self) -> QtWidgets.QWidget:
@@ -214,8 +224,12 @@ class DiscoveryTab(QtWidgets.QWidget):
             "" if (valid and chosen) else "Inserisci un dominio valido e scegli almeno una fonte.")
 
     def _selected_sources(self) -> list[str]:
-        return [sid for sid, bubble in self._source_bubbles.items()
-                if bubble.isChecked() and bubble.isEnabled()]
+        chosen = [sid for sid, bubble in self._source_bubbles.items()
+                  if bubble.isChecked() and bubble.isEnabled()]
+        if self.archive_only.isChecked():
+            archive_ids = {s.id for s in discovery.by_kind(discovery.ARCHIVE)}
+            chosen = [sid for sid in chosen if sid in archive_ids]
+        return chosen
 
     def _selected_filetypes(self) -> list[str]:
         extensions: list[str] = []

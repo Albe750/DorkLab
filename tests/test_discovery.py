@@ -218,3 +218,13 @@ def test_probe_sito_con_404_corretti(config):
 
     assert response.meta["soft_404"] == "no"
     assert any(u.title == "/.env" for u in response.urls)
+
+
+def test_downloader_applica_il_jitter():
+    """Il Downloader con jitter varia la pausa entro i limiti attesi."""
+    from dorklab.fetcher import Downloader
+
+    dl = Downloader("/tmp/x", user_agent="t", delay=4.0, jitter=0.5)
+    for _ in range(30):
+        pause = dl._pause()
+        assert 2.0 - 0.01 <= pause <= 6.0 + 0.01

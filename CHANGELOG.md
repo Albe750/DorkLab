@@ -2,6 +2,26 @@
 
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/).
 
+## [1.6.0] - 2026-09-17
+
+### Aggiunto
+
+- Profili di rete (Impostazioni -> Download): regolano ritardo, variabilita'
+  casuale (jitter) e User-Agent con un'unica scelta.
+  - **Standard**: ritardo breve, User-Agent DorkLab identificabile.
+  - **Discreto**: ritardi piu' lunghi e variabili per non pesare sul server e
+    non somigliare a una raffica di richieste.
+  - **Impronta minima (occultamento)**: di default usa solo fonti d'archivio
+    (il sito non viene contattato, quindi non registra nulla); quando un
+    contatto e' inevitabile usa un User-Agent da browser e ritardi lunghi e
+    casuali. Non altera i log del server ne' rende anonimi: da usare solo dove
+    si e' autorizzati, e il gate di autorizzazione sulle fonti attive resta.
+- Scheda Scoperta: interruttore "Solo fonti d'archivio: non contattare il
+  sito", allineato al profilo scelto, che esclude dalla scansione ogni fonte
+  che tocca il server.
+- Ritardo fra le richieste con jitter (variazione casuale) in sondaggio,
+  crawler e download.
+
 ## [1.5.0] - 2026-09-17
 
 ### Aggiunto

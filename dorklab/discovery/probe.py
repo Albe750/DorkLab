@@ -89,8 +89,7 @@ class PathProbeSource(BaseSource):
                  progress=None, authorized=False) -> DiscoveryResponse:
         self._guard_authorization(authorized)
 
-        user_agent = config.get("user_agent")
-        delay = max(0.0, config.number("request_delay", 1.0))
+        user_agent = config.effective_user_agent()
         paths = load_wordlist()
         if not paths:
             raise DiscoveryError("Elenco dei percorsi non disponibile.")
@@ -112,8 +111,7 @@ class PathProbeSource(BaseSource):
             self._note(progress, "Sondaggio %d/%d: /%s" % (tested, total, path))
             status, ctype, length = self._probe(
                 urljoin(base, path), user_agent=user_agent, handle=handle)
-            if delay:
-                time.sleep(delay)
+            time.sleep(config.jittered_delay())
             if status is None:
                 continue
 

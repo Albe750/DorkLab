@@ -252,7 +252,7 @@ esposti, storage cloud, dati personali, apparati di gestione e indirizzi e-mail.
 
 | Percorso | Contenuto |
 |---|---|
-| `~/.config/dorklab/config.json` | impostazioni e chiavi (permessi `600`) |
+| `~/.config/dorklab/config.json` | impostazioni, profilo di rete e chiavi (permessi `600`) |
 | `~/.local/share/dorklab/dorklab.db` | cronologia e dork salvati |
 | `~/.local/share/dorklab/ghdb_user.json` | voci GHDB importate |
 | `~/.local/share/dorklab/downloads/` | documenti scaricati |
@@ -272,6 +272,32 @@ export EXA_API_KEY="…"
 ```
 
 ---
+
+## Impronta di rete e tracce
+
+Le fonti si dividono nette: **archivio** (Wayback, Common Crawl, crt.sh) e i
+motori di ricerca **non contattano** il sito bersaglio, quindi non lasciano
+tracce nei suoi log; **sitemap/robots, crawler di directory, sondaggio percorsi,
+fingerprint e download dal vivo** interrogano il server e finiscono nei suoi
+access log (IP, ora, URL, User-Agent). Il sondaggio percorsi in particolare e'
+volutamente visibile: molte richieste da un IP in pochi secondi.
+
+I **profili di rete** (Impostazioni -> Download) regolano questo compromesso:
+
+- **Standard** - ritardo breve, User-Agent DorkLab identificabile.
+- **Discreto** - ritardi lunghi e variabili, per non pesare sul server.
+- **Impronta minima** - solo fonti d'archivio per default (zero contatto col
+  sito), e quando il contatto e' inevitabile User-Agent da browser e ritardi
+  casuali.
+
+La scheda Scoperta ha anche l'interruttore **"Solo fonti d'archivio"** per
+garantire, scansione per scansione, che il dominio non venga mai interrogato.
+
+Questi profili riducono o eliminano le tracce, ma **non alterano i log del
+server, non nascondono la tua identita' e non sostituiscono un'autorizzazione**:
+il vincolo di autorizzazione sulle fonti attive resta sempre. Per mascherare
+l'indirizzo IP in un test autorizzato puoi avviare l'app dietro un proxy
+esportando `HTTPS_PROXY` (la libreria di rete lo rispetta automaticamente).
 
 ## Architettura
 

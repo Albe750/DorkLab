@@ -22,6 +22,9 @@ DEFAULTS: dict[str, Any] = {
     "max_download_mb": 50,
     "download_dir": "",
     "user_agent": "DorkLab/1.0 (ricerca documentale; +https://github.com/Albe750/DorkLab)",
+    "network_profile": "standard",
+    "request_jitter": 0.0,
+    "browser_ua": False,
     "confirm_before_browser_batch": True,
     "agentic_translate": True,
     "agentic_filter": False,
@@ -31,6 +34,41 @@ DEFAULTS: dict[str, Any] = {
     "perplexity_model": "sonar-pro",
     "audit_authorized_domains": [],
     "window": {},
+}
+
+#: User-Agent che imita un browser comune: usato dal profilo a impronta minima.
+BROWSER_USER_AGENT = ("Mozilla/5.0 (X11; Linux x86_64; rv:128.0) "
+                      "Gecko/20100101 Firefox/128.0")
+
+#: Profili di rete: regolano ritardo, variabilita' (jitter), User-Agent e la
+#: preferenza per le sole fonti d'archivio. Non rimuovono mai il vincolo di
+#: autorizzazione sulle fonti attive: cambiano solo quanto e come si contatta
+#: un server, non il diritto di farlo.
+NETWORK_PROFILES = {
+    "standard": {
+        "label": "Standard",
+        "request_delay": 1.5, "request_jitter": 0.0, "respect_robots": True,
+        "browser_ua": False, "archive_only": False,
+        "desc": "Comportamento predefinito: ritardo breve, User-Agent DorkLab "
+                "identificabile, robots.txt rispettato.",
+    },
+    "discreto": {
+        "label": "Discreto (poco invadente)",
+        "request_delay": 4.0, "request_jitter": 0.4, "respect_robots": True,
+        "browser_ua": False, "archive_only": False,
+        "desc": "Ritardi piu' lunghi e variabili per non pesare sul server e non "
+                "somigliare a una raffica. User-Agent DorkLab ancora onesto.",
+    },
+    "occulto": {
+        "label": "Impronta minima (occultamento)",
+        "request_delay": 9.0, "request_jitter": 0.6, "respect_robots": True,
+        "browser_ua": True, "archive_only": True,
+        "desc": "Riduce al minimo le tracce: di default usa SOLO fonti d'archivio "
+                "(il sito non viene contattato, quindi non registra nulla). Quando "
+                "un contatto e' inevitabile (download dal vivo, fingerprint) usa "
+                "un User-Agent da browser e ritardi lunghi e casuali. Non altera i "
+                "log del server ne' ti rende anonimo: usalo solo dove sei autorizzato.",
+    },
 }
 
 #: Le credenziali possono anche arrivare dall'ambiente, cosi' da non doverle
@@ -111,6 +149,36 @@ class Config:
             return float(value)
         except (TypeError, ValueError):
             return float(default)
+
+    def apply_profile(self, name: str) -> None:
+        """Applica un profilo di rete impostando i relativi valori."""
+        profile = NETWORK_PROFILES.get(name)
+        if not profile:
+            return
+        self._values["network_profile"] = name
+        for key in ("request_delay", "request_jitter", "respect_robots", "browser_ua"):
+            self._values[key] = profile[key]
+
+    def effective_user_agent(self) -> str:
+        """User-Agent da usare: da browser se il profilo lo richiede."""
+        if self._values.get("browser_ua"):
+            return BROWSER_USER_AGENT
+        return str(self._values.get("user_agent") or "")
+
+    def jittered_delay(self) -> float:
+        """Ritardo con variazione casuale, per non avere un ritmo regolare."""
+        import random
+
+        base = self.number("request_delay", 1.5)
+        jitter = max(0.0, min(1.0, self.number("request_jitter", 0.0)))
+        if jitter <= 0:
+            return base
+        return max(0.0, base * (1.0 + random.uniform(-jitter, jitter)))
+
+    def archive_only(self) -> bool:
+        """True se il profilo predilige le sole fonti d'archivio."""
+        profile = NETWORK_PROFILES.get(self._values.get("network_profile", "standard"))
+        return bool(profile and profile.get("archive_only"))
 
     def download_path(self) -> str:
         value = str(self._values.get("download_dir") or "").strip()

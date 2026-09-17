@@ -54,8 +54,7 @@ class DirectoryCrawlSource(BaseSource):
                  progress=None, authorized=False) -> DiscoveryResponse:
         import time
 
-        user_agent = config.get("user_agent")
-        delay = max(0.0, config.number("request_delay", 1.0))
+        user_agent = config.effective_user_agent()
         respect_robots = bool(config.get("respect_robots", True))
 
         # Punto di partenza: la radice del dominio, piu' alcune cartelle comuni
@@ -121,8 +120,7 @@ class DirectoryCrawlSource(BaseSource):
                         url=child, source=self.id, filetype=filetype,
                         title=unquote(child.rsplit("/", 1)[-1]),
                         extra={"directory": url})
-            if delay:
-                time.sleep(delay)
+            time.sleep(config.jittered_delay())
 
         note = ("%d directory aperte trovate su %d pagine analizzate"
                 % (listings, pages)) if pages else "Nessun punto di partenza raggiungibile."

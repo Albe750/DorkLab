@@ -79,10 +79,12 @@ class Downloader:
     """Scarica una lista di URL in una cartella, con controlli di sicurezza."""
 
     def __init__(self, directory: str, *, user_agent: str, delay: float = 1.5,
-                 respect_robots: bool = True, max_mb: int = 50) -> None:
+                 respect_robots: bool = True, max_mb: int = 50,
+                 jitter: float = 0.0) -> None:
         self.directory = Path(directory)
         self.user_agent = user_agent
         self.delay = max(0.0, float(delay))
+        self.jitter = max(0.0, min(1.0, float(jitter)))
         self.respect_robots = respect_robots
         self.max_bytes = max(1, int(max_mb)) * 1024 * 1024
         self._robots = RobotsCache(user_agent)
@@ -138,6 +140,14 @@ class Downloader:
 
         return DownloadOutcome(url, path=str(target), ok=True, size=written)
 
+    def _pause(self) -> float:
+        """Ritardo fra i download, con variazione casuale se attiva."""
+        if self.jitter <= 0:
+            return self.delay
+        import random
+
+        return max(0.0, self.delay * (1.0 + random.uniform(-self.jitter, self.jitter)))
+
     def fetch_all(self, urls: list[str], progress=None) -> list[DownloadOutcome]:
         outcomes: list[DownloadOutcome] = []
         total = len(urls)
@@ -148,5 +158,5 @@ class Downloader:
                 progress(index, total, url)
             outcomes.append(self.fetch(url))
             if self.delay and index < total:
-                time.sleep(self.delay)
+                time.sleep(self._pause())
         return outcomes
