@@ -146,3 +146,51 @@ def test_catalogo_ghdb_popolato(window):
     assert window.ghdb.table.rowCount() > 40
     window.ghdb.search_edit.setText("password")
     assert window.ghdb.table.rowCount() > 0
+
+
+def test_keep_alive_trattiene_e_rilascia(app):
+    """keep_alive tiene un QThread referenziato finche' non e' terminato."""
+    from dorklab.qtcompat import QtCore
+    from dorklab.ui.workers import keep_alive
+
+    class Owner:
+        pass
+
+    class Brief(QtCore.QThread):
+        def run(self):
+            self.msleep(50)
+
+    owner = Owner()
+    worker = Brief()
+    keep_alive(owner, worker)
+    assert worker in owner._threads     # trattenuto prima dell'avvio
+    worker.start()
+    worker.wait()
+    # dà tempo allo slot finished (coda eventi) di rilasciare il worker
+    for _ in range(50):
+        app.processEvents()
+        if worker not in owner._threads:
+            break
+        QtCore.QThread.msleep(5)
+    assert worker not in owner._threads  # rilasciato dopo la fine
+
+
+def test_chiusura_con_worker_attivo_non_abortisce(window):
+    """Chiudere la finestra mentre un worker gira non deve far abortire."""
+    import time
+    from unittest.mock import patch
+    from dorklab.providers.base import SearchResponse, SearchResult
+    from dorklab import providers
+
+    def slow(query, *, config, limit=20, progress=None):
+        time.sleep(0.5)
+        return SearchResponse(provider="tavily", query=query,
+                              results=[SearchResult(url="https://a.it/x.pdf")])
+
+    tav = providers.get("tavily")
+    with patch.object(type(tav), "available", return_value=True), \
+         patch.object(type(tav), "search", side_effect=slow):
+        window.run_search("tavily", "site:a.it filetype:pdf x", 20)
+        assert window._worker is not None and window._worker.isRunning()
+        window.close()   # deve attendere il worker senza abortire
+    assert not (window._worker and window._worker.isRunning())

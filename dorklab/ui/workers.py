@@ -9,6 +9,47 @@ from ..fetcher import Downloader
 from ..metadata import extract as extract_metadata
 
 
+def keep_alive(owner, worker) -> None:
+    """Impedisce che un QThread venga distrutto mentre e' ancora in esecuzione.
+
+    Con PyQt il worker e' un QThread: se il suo riferimento Python viene
+    azzerato o sostituito prima che il thread finisca, Qt chiama qFatal e il
+    processo aborta (SIGABRT). Qui il worker viene trattenuto in una lista finche'
+    il segnale ``finished`` (emesso solo dopo il ritorno di run()) non scatta;
+    a quel punto si attende la fine effettiva e lo si rilascia. Va chiamato
+    PRIMA di worker.start().
+    """
+    bucket = getattr(owner, "_threads", None)
+    if bucket is None:
+        bucket = []
+        owner._threads = bucket
+    bucket.append(worker)
+
+    def _release() -> None:
+        try:
+            worker.wait()
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            bucket.remove(worker)
+        except ValueError:
+            pass
+
+    worker.finished.connect(_release)
+
+
+def wait_all(owner, timeout_ms: int = 3000) -> None:
+    """Ferma e attende tutti i worker trattenuti (usato alla chiusura)."""
+    for worker in list(getattr(owner, "_threads", []) or []):
+        try:
+            if hasattr(worker, "stop"):
+                worker.stop()
+            worker.quit()
+            worker.wait(timeout_ms)
+        except Exception:  # noqa: BLE001
+            pass
+
+
 class SearchWorker(QtCore.QThread):
     """Esegue una o piu' query su un motore e restituisce i risultati."""
 

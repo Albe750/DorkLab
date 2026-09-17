@@ -16,7 +16,7 @@ from .tab_ghdb import GhdbTab
 from .tab_history import HistoryTab
 from .tab_results import ResultsTab
 from .widgets import confirm, message
-from .workers import SearchWorker
+from .workers import SearchWorker, keep_alive, wait_all
 
 FIRST_RUN_KEY = "accepted_terms"
 
@@ -170,8 +170,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._worker.finished_ok.connect(self._search_done)
         self._worker.failed.connect(self._search_failed)
         self._worker.finished.connect(self._search_cleanup)
+        keep_alive(self, self._worker)
         self._worker.start()
-
     def _search_done(self, response) -> None:
         self.results.set_response(response)
         self.tabs.setCurrentWidget(self.results)
@@ -300,9 +300,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.config.save()
         except OSError:
             pass
-        if self._worker and self._worker.isRunning():
-            self._worker.quit()
-            self._worker.wait(2000)
+        # attende la fine di tutti i worker (di tutte le schede) prima di uscire:
+        # distruggere un QThread ancora in esecuzione fa abortire il processo.
+        wait_all(self)
+        for tab in (self.builder, self.results, self.discovery, self.audit, self.history):
+            wait_all(tab)
         self.store.close()
         super().closeEvent(event)
 

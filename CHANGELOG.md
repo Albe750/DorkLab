@@ -2,6 +2,18 @@
 
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/).
 
+## [1.6.2] - 2026-09-17
+
+### Corretto
+
+- Chiusura inaspettata (SIGABRT, "QThread: Destroyed while thread is still
+  running"): i worker di ricerca, scoperta, download e fingerprint sono QThread
+  e potevano essere distrutti mentre il thread era ancora in esecuzione - il
+  loro riferimento Python veniva azzerato prima della fine (piu' probabile con
+  il garbage collector di Python 3.14). Ora un helper `keep_alive` trattiene
+  ogni worker finche' il thread non e' davvero terminato, e la chiusura della
+  finestra attende tutti i worker attivi prima di uscire.
+
 ## [1.6.1] - 2026-09-17
 
 ### Cambiato

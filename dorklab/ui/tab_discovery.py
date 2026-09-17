@@ -13,7 +13,7 @@ from pathlib import Path
 from .. import audit, catalog, discovery, exporters
 from ..qtcompat import Qt, QtCore, QtGui, QtWidgets, Signal
 from .widgets import Badge, BubbleBar, choose_directory, confirm, info_label, message
-from .workers import DiscoveryWorker, DownloadWorker, FingerprintWorker
+from .workers import DiscoveryWorker, DownloadWorker, FingerprintWorker, keep_alive, wait_all
 
 
 class DiscoveryTab(QtWidgets.QWidget):
@@ -274,8 +274,8 @@ class DiscoveryTab(QtWidgets.QWidget):
         self._worker.one_done.connect(self._on_source_done)
         self._worker.one_failed.connect(self._on_source_failed)
         self._worker.finished_all.connect(self._on_finished)
+        keep_alive(self, self._worker)
         self._worker.start()
-
     def _on_source_done(self, source_id: str, response) -> None:
         before = len(self._items)
         known = {i.url.rstrip("/").lower() for i in self._items}
@@ -395,8 +395,8 @@ class DiscoveryTab(QtWidgets.QWidget):
         self._download_worker.finished_all.connect(self._on_download_done)
         self._download_worker.failed.connect(
             lambda e: (self.progress.setVisible(False), message(self, "Errore", e, "error")))
+        keep_alive(self, self._download_worker)
         self._download_worker.start()
-
     def _on_download_done(self, outcomes, metadata) -> None:
         self.progress.setVisible(False)
         self.stop_button.setVisible(False)
@@ -433,8 +433,8 @@ class DiscoveryTab(QtWidgets.QWidget):
         self._fp_worker = FingerprintWorker(domain, urls, self.config)
         self._fp_worker.finished_ok.connect(self._on_fingerprint)
         self._fp_worker.failed.connect(self._on_fingerprint_failed)
+        keep_alive(self, self._fp_worker)
         self._fp_worker.start()
-
     def _on_fingerprint(self, report) -> None:
         self.fingerprint_button.setEnabled(True)
         from .dialog_fingerprint import FingerprintDialog

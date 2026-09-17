@@ -14,7 +14,7 @@ from pathlib import Path
 from .. import audit, catalog, exporters, providers
 from ..qtcompat import Qt, QtCore, QtGui, QtWidgets, Signal
 from .widgets import Badge, BubbleBar, confirm, info_label, message
-from .workers import BatchSearchWorker
+from .workers import BatchSearchWorker, keep_alive, wait_all
 
 
 class AuditTab(QtWidgets.QWidget):
@@ -353,8 +353,8 @@ class AuditTab(QtWidgets.QWidget):
         self._worker.one_done.connect(self._on_one_done)
         self._worker.one_failed.connect(self._on_one_failed)
         self._worker.finished_all.connect(self._on_finished)
+        keep_alive(self, self._worker)
         self._worker.start()
-
     def _run_in_browser(self) -> None:
         if not self.plan:
             return

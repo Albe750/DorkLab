@@ -8,7 +8,7 @@ from .. import exporters, metadata as metadata_mod
 from ..qtcompat import Qt, QtCore, QtGui, QtWidgets, Signal
 from ..providers.base import SearchResult
 from .widgets import Badge, choose_directory, confirm, info_label, message
-from .workers import DownloadWorker, ExtractWorker
+from .workers import DownloadWorker, ExtractWorker, keep_alive, wait_all
 
 COLUMNS = ["#", "Titolo", "Tipo", "Dominio", "Vincoli", "Estratto"]
 
@@ -335,8 +335,8 @@ class ResultsTab(QtWidgets.QWidget):
         self._worker.progress.connect(self._on_progress)
         self._worker.finished_all.connect(self._on_download_done)
         self._worker.failed.connect(self._on_worker_failed)
+        keep_alive(self, self._worker)
         self._worker.start()
-
     def extract_selected(self) -> None:
         chosen = self.selected_results()
         if not chosen:
@@ -353,8 +353,8 @@ class ResultsTab(QtWidgets.QWidget):
         self._worker.progress.connect(lambda text: self.status.emit(text))
         self._worker.finished_ok.connect(self._on_extract_done)
         self._worker.failed.connect(self._on_worker_failed)
+        keep_alive(self, self._worker)
         self._worker.start()
-
     def export_results(self) -> None:
         if not self.results:
             return
